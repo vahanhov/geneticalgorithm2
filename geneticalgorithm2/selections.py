@@ -6,26 +6,28 @@ import numpy as np
 
 
 class Selection:
-    
-    def __inverse_scores(scores):
+
+    @staticmethod
+    def __inverse_scores(scores: np.ndarray):
         """
         inverse scores (min val goes to max)
         """
         minobj = scores[0]
         normobj = scores - minobj if minobj < 0 else scores
                 
-        return (np.amax(normobj) + 1) - normobj 
-    
-    
+        return (np.amax(normobj) + 1) - normobj
+
+    @staticmethod
     def fully_random():
         
-        def func(scores, parents_count):
+        def func(scores: np.ndarray, parents_count: int):
             indexes = np.arange(parents_count)
             return np.random.choice(indexes, parents_count, replace = False)
         
         return func
-    
-    def __roulette(scores, parents_count):
+
+    @staticmethod
+    def __roulette(scores: np.ndarray, parents_count: int):
         
         sum_normobj = np.sum(scores)
         prob = scores/sum_normobj
@@ -43,20 +45,21 @@ class Selection:
             
         return parents_indexes
 
-    
+    @staticmethod
     def roulette():
         
-        def func(scores, parents_count):
+        def func(scores: np.ndarray, parents_count: int):
 
             normobj = Selection.__inverse_scores(scores)
 
             return Selection.__roulette(normobj, parents_count)
         
         return func
-    
+
+    @staticmethod
     def stochastic():
         
-        def func(scores, parents_count):
+        def func(scores: np.ndarray, parents_count: int):
             f = Selection.__inverse_scores(scores)
             
             fN = 1.0/parents_count
@@ -79,10 +82,11 @@ class Selection:
             return np.array(parents[:parents_count])
         
         return func
-    
-    def sigma_scaling(epsilon = 0.01, is_noisy = False):
+
+    @staticmethod
+    def sigma_scaling(epsilon: float = 0.01, is_noisy: bool = False):
         
-        def func(scores, parents_count):
+        def func(scores: np.ndarray, parents_count):
             f = Selection.__inverse_scores(scores)
             
             sigma = np.std(f, ddof = 1) if is_noisy else np.std(f)
@@ -96,19 +100,21 @@ class Selection:
             return Selection.__roulette(f, parents_count)
         
         return func
-    
+
+    @staticmethod
     def ranking():
         
-        def func(scores, parents_count):
+        def func(scores: np.ndarray, parents_count: int):
             return Selection.__roulette(1 + np.arange(parents_count)[::-1], parents_count)
         
         return func
-    
-    def linear_ranking(selection_pressure = 1.5):
+
+    @staticmethod
+    def linear_ranking(selection_pressure: float = 1.5):
         
         assert (selection_pressure > 1 and selection_pressure < 2), f"selection_pressure should be in (1, 2), but got {selection_pressure}"
         
-        def func(scores, parents_count):
+        def func(scores: np.ndarray, parents_count: int):
             tmp = parents_count*(parents_count-1)
             alpha = (2*parents_count - selection_pressure*(parents_count + 1))/tmp
             beta = 2*(selection_pressure - 1)/tmp
@@ -125,10 +131,11 @@ class Selection:
             
         
         return func
-    
-    def tournament(tau = 2):
+
+    @staticmethod
+    def tournament(tau: int = 2):
         
-        def func(scores, parents_count):
+        def func(scores: np.ndarray, parents_count: int):
             
             indexes = np.arange(parents_count)
             

@@ -4,7 +4,7 @@ import numpy as np
 
 
 
-def get_copies(x, y):
+def get_copies(x: np.ndarray, y: np.ndarray):
     return x.copy(), y.copy()
 
 
@@ -13,7 +13,7 @@ class Crossover:
     @staticmethod
     def one_point():
         
-        def func(x, y):
+        def func(x: np.ndarray, y: np.ndarray):
             ofs1, ofs2 = get_copies(x, y)
         
             ran=np.random.randint(0, x.size)
@@ -27,7 +27,7 @@ class Crossover:
     @staticmethod
     def two_point():
         
-        def func(x, y):
+        def func(x: np.ndarray, y: np.ndarray):
             ofs1, ofs2 = get_copies(x, y)
         
             ran1=np.random.randint(0, x.size)
@@ -43,7 +43,7 @@ class Crossover:
     @staticmethod
     def uniform():
         
-        def func(x, y):
+        def func(x: np.ndarray, y: np.ndarray):
             ofs1, ofs2 = get_copies(x, y)
         
             ran = np.random.random(x.size) < 0.5
@@ -55,9 +55,9 @@ class Crossover:
         return func
     
     @staticmethod
-    def segment(prob = 0.6):
+    def segment(prob: int = 0.6):
         
-        def func(x, y):
+        def func(x: np.ndarray, y: np.ndarray):
             
             ofs1, ofs2 = get_copies(x, y)
             
@@ -74,7 +74,7 @@ class Crossover:
     @staticmethod
     def shuffle():
         
-        def func(x, y):
+        def func(x: np.ndarray, y: np.ndarray):
             
             ofs1, ofs2 = get_copies(x, y)
             
@@ -92,11 +92,11 @@ class Crossover:
         return func
     
     @staticmethod
-    def uniform_window(window = 7):
+    def uniform_window(window: int = 7):
 
         base_uniform = Crossover.uniform()
 
-        def func(x, y):
+        def func(x: np.ndarray, y: np.ndarray):
 
             if x.size % window != 0:
                 raise Exception(f"dimension {x.size} cannot be divided by window {window}")
@@ -133,7 +133,7 @@ class Crossover:
     @staticmethod
     def arithmetic():
         
-        def func(x, y):
+        def func(x: np.ndarray, y: np.ndarray):
             b = random.random()
             a = 1-b
             return a*x + b*y, a*y + b*x
@@ -141,9 +141,9 @@ class Crossover:
         return func
     
     @staticmethod
-    def mixed(alpha = 0.5):
+    def mixed(alpha: float = 0.5):
         
-        def func(x,y):
+        def func(x: np.ndarray, y: np.ndarray):
             
             a = np.empty(x.size)
             b = np.empty(y.size)

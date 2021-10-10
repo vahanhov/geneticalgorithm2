@@ -1,4 +1,6 @@
 
+from typing import List, Optional
+
 import os
 import random
 
@@ -10,11 +12,7 @@ from matplotlib.ticker import MaxNLocator
 from OppOpPopInit import OppositionOperators, SampleInitializers
 
 from .another_plotting_tools import plot_pop_scores
-
-
-def folder_create(folder):
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+from .utils import folder_create
 
 
 class Callbacks:
@@ -25,11 +23,11 @@ class Callbacks:
 
 
     @staticmethod
-    def SavePopulation(folder, save_gen_step = 50, file_prefix = 'population'):
+    def SavePopulation(folder: str, save_gen_step: int = 50, file_prefix:str = 'population'):
         
         folder_create(folder)
 
-        def func(generation_number, report_list, last_population, last_scores):
+        def func(generation_number: int, report_list: List[float], last_population: np.ndarray, last_scores: np.ndarray):
     
             if generation_number % save_gen_step != 0:
                 return
@@ -39,10 +37,10 @@ class Callbacks:
         return func
     
     @staticmethod
-    def PlotOptimizationProcess(folder, save_gen_step = 50, show = False, main_color = 'green', file_prefix = 'report'):
+    def PlotOptimizationProcess(folder: str, save_gen_step: int = 50, show: bool = False, main_color: str = 'green', file_prefix: str = 'report'):
         folder_create(folder)
 
-        def func(generation_number, report_list, last_population, last_scores):
+        def func(generation_number: int, report_list: List[float], last_population: np.ndarray, last_scores: np.ndarray):
 
             if generation_number % save_gen_step != 0:
                 return

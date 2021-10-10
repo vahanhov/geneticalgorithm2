@@ -1,8 +1,12 @@
 
+from typing import Callable, Optional, Tuple
+
 import numpy as np
 
 
-def Population_initializer(select_best_of = 4, local_optimization_step = 'never', local_optimizer = None):
+def Population_initializer(select_best_of: int = 4,
+                           local_optimization_step: str = 'never',
+                           local_optimizer: Optional[Callable[[np.ndarray, float], Tuple[np.ndarray, float]]] = None):
     """
     select_best_of (int) -- select 1/select_best_of best part of start population. For example, for select_best_of = 4 and population_size = N will be selected N best objects from 5N generated objects (if start_generation = None dictionary). If start_generation is not None dictionary, it will be selected best size(start_generation)/N  objects
 

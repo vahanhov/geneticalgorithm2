@@ -1,4 +1,6 @@
 
+from typing import Optional
+
 import numpy as np
 
 import matplotlib.pyplot as plt 
@@ -7,7 +9,7 @@ from matplotlib.colors import Normalize
 from matplotlib.ticker import NullLocator
 
 
-def plot_pop_scores(scores, title = 'Population scores', save_as = None):
+def plot_pop_scores(scores, title: str = 'Population scores', save_as: Optional[str] = None):
     """
     plots scores (numeric values) as sorted bars
     """
@@ -49,7 +51,7 @@ def plot_pop_scores(scores, title = 'Population scores', save_as = None):
     
     fig.tight_layout()
     
-    if not (save_as is None):
+    if save_as is not None:
         plt.savefig(save_as, dpi = 200)
     
     plt.show()
