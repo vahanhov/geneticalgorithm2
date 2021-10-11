@@ -26,7 +26,7 @@ SOFTWARE.
 ###############################################################################
 ###############################################################################
 
-from typing import Callable
+from typing import Callable, List, Tuple, Optional, Dict, Any, Union
 
 
 import sys
@@ -46,21 +46,18 @@ from OppOpPopInit import init_population, SampleInitializers, OppositionOperator
 
 ###############################################################################
 
+from.classes import AlgorithmParams
+
 from .crossovers import Crossover
 from .mutations import Mutations
 from .selections import Selection
 from .initializer import Population_initializer
-from .callbacks import Callbacks
 from .another_plotting_tools import plot_pop_scores
 
 
 ###############################################################################
+from .utils import can_be_prob, is_numpy
 
-def can_be_prob(value):
-    return value >=0 and value <=1
-
-def is_numpy(arg):
-    return type(arg) == np.ndarray
 
 ###############################################################################
 
@@ -87,26 +84,18 @@ class geneticalgorithm2:
 
     '''
     
-    default_params = {
-        'max_num_iteration': None,
-        'population_size':100,
-        'mutation_probability':0.1,
-        'elit_ratio': 0.01,
-        'crossover_probability': 0.5,
-        'parents_portion': 0.3,
-        'crossover_type':'uniform',
-        'mutation_type': 'uniform_by_center',
-        'selection_type': 'roulette',
-        'max_iteration_without_improv':None
-        }
+    default_params = AlgorithmParams()
     
     
     #############################################################
-    def __init__(self, function: Callable, dimension:int, variable_type:str = 'bool', \
-                 variable_boundaries=None,\
-                 variable_type_mixed=None, \
-                 function_timeout:float =10,\
-                 algorithm_parameters = default_params):
+    def __init__(self,
+                 function: Callable[[np.ndarray], float],
+                 dimension:int,
+                 variable_type:str = 'bool',
+                 variable_boundaries: Optional[np.ndarray] = None,
+                 variable_type_mixed: Optional[np.ndarray] = None,
+                 function_timeout:float = 10,
+                 algorithm_parameters: Union[AlgorithmParams, Dict[str, Any]] = default_params):
         '''
         @param function <Callable> - the given objective function to be minimized
         NOTE: This implementation minimizes the given objective function. 
@@ -158,10 +147,12 @@ class geneticalgorithm2:
         self.__name__ = geneticalgorithm2
 
         # input algorithm's parameters
-        
-        self.param = algorithm_parameters
-        self.param.update({key:val for key, val in geneticalgorithm2.default_params.items() if key not in list((algorithm_parameters.keys()))})
-        
+
+        if type(type(algorithm_parameters) != AlgorithmParams):
+            algorithm_parameters = AlgorithmParams.from_dict(algorithm_parameters)
+
+        self.param = algorithm_parameters # if type(algorithm_parameters) == AlgorithmParams else AlgorithmParams.from_dict(algorithm_parameters)
+
 
         #############################################################
         # input function
@@ -180,7 +171,7 @@ class geneticalgorithm2:
         #############################################################
         # input variable type
 
-        assert(variable_type in ['bool', 'int', 'real']),  f"\n variable_type must be 'bool', 'int', or 'real', got {variable_type}"
+        assert(variable_type in ('bool', 'int', 'real')),  f"\n variable_type must be 'bool', 'int', or 'real', got {variable_type}"
        #############################################################
         # input variables' type (MIXED)     
 
@@ -211,7 +202,7 @@ class geneticalgorithm2:
             
         if variable_type != 'bool' or is_numpy(variable_type_mixed):
                        
-            assert (is_numpy(variable_boundaries)),  "\n variable_boundaries must be numpy array"
+            assert (is_numpy(variable_boundaries)), "\n variable_boundaries must be numpy array"
         
             assert (len(variable_boundaries)==self.dim), "\n variable_boundaries must have a length equal dimension"        
         
@@ -232,19 +223,19 @@ class geneticalgorithm2:
         
         self.pop_s = int(self.param['population_size'])
         
-        assert ( can_be_prob( self.param['parents_portion'] ) ), "parents_portion must be in range [0,1]" 
+        assert (can_be_prob(self.param['parents_portion'])), "parents_portion must be in range [0,1]"
         
         self.__set_par_s(self.param['parents_portion'])
                
         self.prob_mut = self.param['mutation_probability']
         
-        assert (can_be_prob( self.prob_mut)), "mutation_probability must be in range [0,1]"
+        assert (can_be_prob(self.prob_mut)), "mutation_probability must be in range [0,1]"
         
         
         self.prob_cross=self.param['crossover_probability']
-        assert (can_be_prob( self.prob_cross)),  "mutation_probability must be in range [0,1]"
+        assert (can_be_prob(self.prob_cross)), "mutation_probability must be in range [0,1]"
         
-        assert ( can_be_prob( self.param['elit_ratio']) ),  "elit_ratio must be in range [0,1]"                
+        assert (can_be_prob(self.param['elit_ratio'])), "elit_ratio must be in range [0,1]"
         
         self.__set_elit(self.pop_s, self.param['elit_ratio'])
         assert(self.par_s>=self.num_elit), "\n number of parents must be greater than number of elits"
