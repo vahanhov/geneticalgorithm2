@@ -26,7 +26,7 @@ SOFTWARE.
 ###############################################################################
 ###############################################################################
 
-from typing import Callable, List, Tuple, Optional, Dict, Any, Union
+from typing import Callable, List, Tuple, Optional, Dict, Any, Union, Sequence
 
 
 import sys
@@ -48,9 +48,7 @@ from OppOpPopInit import init_population, SampleInitializers, OppositionOperator
 
 from.classes import AlgorithmParams
 
-from .crossovers import Crossover
-from .mutations import Mutations
-from .selections import Selection
+
 from .initializer import Population_initializer
 from .another_plotting_tools import plot_pop_scores
 
@@ -92,8 +90,8 @@ class geneticalgorithm2:
                  function: Callable[[np.ndarray], float],
                  dimension:int,
                  variable_type:str = 'bool',
-                 variable_boundaries: Optional[np.ndarray] = None,
-                 variable_type_mixed: Optional[np.ndarray] = None,
+                 variable_boundaries: Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]] = None,
+                 variable_type_mixed: Optional[Sequence[str]] = None,
                  function_timeout:float = 10,
                  algorithm_parameters: Union[AlgorithmParams, Dict[str, Any]] = default_params):
         '''
@@ -148,124 +146,79 @@ class geneticalgorithm2:
 
         # input algorithm's parameters
 
+        assert type(algorithm_parameters) in (dict, AlgorithmParams), "algorithm_parameters must be dict or AlgorithmParams object"
         if type(type(algorithm_parameters) != AlgorithmParams):
             algorithm_parameters = AlgorithmParams.from_dict(algorithm_parameters)
 
-        self.param = algorithm_parameters # if type(algorithm_parameters) == AlgorithmParams else AlgorithmParams.from_dict(algorithm_parameters)
+        algorithm_parameters._check_if_valid()
+        self.crossover, self.real_mutation, self.selection = algorithm_parameters.get_CMS()
 
+        self.param = algorithm_parameters # if type(algorithm_parameters) == AlgorithmParams else AlgorithmParams.from_dict(algorithm_parameters)
 
         #############################################################
         # input function
-        assert (callable(function)), "function must be callable!"     
-        
+        assert (callable(function)), "function must be callable!"
         self.f = function
+        #Timeout
+        self.funtimeout = float(function_timeout)
+
         #############################################################
         #dimension
         
         self.dim = int(dimension)
-        
-        indexes = np.arange(self.dim)
-        self.indexes_int = np.array([])
-        self.indexes_float = np.array([])
 
-        #############################################################
-        # input variable type
+        #types indexes
+        self.__set_types_indexes(variable_type, variable_type_mixed)
 
-        assert(variable_type in ('bool', 'int', 'real')),  f"\n variable_type must be 'bool', 'int', or 'real', got {variable_type}"
-       #############################################################
-        # input variables' type (MIXED)     
+        # input variables' boundaries
+        self.__set_var_boundaries(variable_type, variable_type_mixed, variable_boundaries)
 
-        if variable_type_mixed is None:
-            
-            if variable_type == 'real': 
-                #self.var_type = np.array([['real']]*self.dim)
-                self.indexes_float = indexes
-            else:
-                #self.var_type = np.array([['int']]*self.dim)
-                self.indexes_int = indexes
-
-        else:
-            assert (is_numpy(variable_type_mixed)), "\n variable_type must be numpy array"  
-            assert (len(variable_type_mixed) == self.dim),  "\n variable_type must have a length equal dimension."       
-
-            for i in variable_type_mixed:
-                assert (i in ('real','int')), "\n variable_type_mixed is either 'int' or 'real' "+"ex:['int','real','real']"+"\n for 'boolean' use 'int' and specify boundary as [0,1]"
-                
-            #self.var_type = variable_type_mixed
-            self.indexes_int = indexes[variable_type_mixed == 'int']
-            self.indexes_float = indexes[variable_type_mixed == 'real']
-            
-        self.set_crossover_and_mutations(algorithm_parameters['crossover_type'], algorithm_parameters['mutation_type'], algorithm_parameters['selection_type'])
-        #############################################################
-        # input variables' boundaries 
-
-            
-        if variable_type != 'bool' or is_numpy(variable_type_mixed):
-                       
-            assert (is_numpy(variable_boundaries)), "\n variable_boundaries must be numpy array"
-        
-            assert (len(variable_boundaries)==self.dim), "\n variable_boundaries must have a length equal dimension"        
-        
-        
-            for i in variable_boundaries:
-                assert (len(i) == 2),  "\n boundary for each variable must be a tuple of length two." 
-                assert(i[0]<=i[1]), "\n lower_boundaries must be smaller than upper_boundaries [lower,upper]"
-            self.var_bound = variable_boundaries
-        else:
-            self.var_bound = np.array([[0,1]]*self.dim)
- 
-        ############################################################# 
-        #Timeout
-        self.funtimeout = float(function_timeout)
         
         ############################################################# 
 
         
         self.pop_s = int(self.param['population_size'])
-        
-        assert (can_be_prob(self.param['parents_portion'])), "parents_portion must be in range [0,1]"
-        
         self.__set_par_s(self.param['parents_portion'])
-               
+        
         self.prob_mut = self.param['mutation_probability']
-        
-        assert (can_be_prob(self.prob_mut)), "mutation_probability must be in range [0,1]"
-        
-        
         self.prob_cross=self.param['crossover_probability']
-        assert (can_be_prob(self.prob_cross)), "mutation_probability must be in range [0,1]"
-        
-        assert (can_be_prob(self.param['elit_ratio'])), "elit_ratio must be in range [0,1]"
-        
+
         self.__set_elit(self.pop_s, self.param['elit_ratio'])
         assert(self.par_s>=self.num_elit), "\n number of parents must be greater than number of elits"
-        
-        if self.param['max_num_iteration'] == None:
-            self.iterate = 0
+
+
+
+        if self.param['max_num_iteration'] is None:
+            iterate = 0
             for i in range (0, self.dim):
                 if i in self.indexes_int:
-                    self.iterate += (self.var_bound[i][1]-self.var_bound[i][0])*self.dim*(100/self.pop_s)
+                    iterate += (self.var_bound[i][1]-self.var_bound[i][0])*self.dim*(100/self.pop_s)
                 else:
-                    self.iterate += (self.var_bound[i][1]-self.var_bound[i][0])*50*(100/self.pop_s)
-            self.iterate = int(self.iterate)
-            if (self.iterate*self.pop_s)>10000000:
-                self.iterate=10000000/self.pop_s
+                    iterate += (self.var_bound[i][1]-self.var_bound[i][0])*50*(100/self.pop_s)
+            iterate = int(self.iterate)
+            if (iterate*self.pop_s)>10000000:
+                iterate=10000000/self.pop_s
             
-            if self.iterate > 8000:
-                self.iterate = 8000
+            if iterate > 8000:
+                iterate = 8000
+
+            self.iterate = iterate
 
         else:
             self.iterate = int(self.param['max_num_iteration'])
           
-        self.stop_mniwi = False ## what
-        if self.param['max_iteration_without_improv'] == None or self.param['max_iteration_without_improv'] < 1:
+        self.stop_mniwi = False # is stopped cuz of no progress some iterations
+        max_it = self.param['max_iteration_without_improv']
+        if max_it is None:
             self.mniwi = self.iterate + 1
         else: 
-            self.mniwi = int(self.param['max_iteration_without_improv'])
+            self.mniwi = int(max_it)
+
 
     def __set_par_s(self, parents_portion):
 
         self.par_s = int(parents_portion*self.pop_s)
+        assert self.par_s <= self.pop_s, f'parents count {self.par_s} cannot be less than population size {self.pop_s}'
         trl= self.pop_s - self.par_s
         if trl % 2 != 0:
             self.par_s += 1
@@ -277,61 +230,56 @@ class geneticalgorithm2:
         else:
             self.num_elit = int(trl)
 
-    def set_crossover_and_mutations(self, crossover, mutation, selection):
-        
-        if type(crossover) == str:
-            if crossover == 'one_point':
-                self.crossover = Crossover.one_point()
-            elif crossover == 'two_point':
-                self.crossover = Crossover.two_point()
-            elif crossover == 'uniform':
-                self.crossover = Crossover.uniform()
-            elif crossover == 'segment':
-                self.crossover = Crossover.segment()
-            elif crossover == 'shuffle':
-                self.crossover = Crossover.shuffle()
-            else:
-                raise Exception(f"unknown type of crossover: {crossover}")
-        else:
-            self.crossover = crossover 
-        
-        if type(mutation) == str:
-            if mutation == 'uniform_by_x':
-                self.real_mutation = Mutations.uniform_by_x()
-            elif mutation == 'uniform_by_center':
-                self.real_mutation = Mutations.uniform_by_center()
-            elif mutation == 'gauss_by_center':
-                self.real_mutation = Mutations.gauss_by_center()
-            elif mutation == 'gauss_by_x':
-                self.real_mutation = Mutations.gauss_by_x()
-            else:
-                raise Exception(f"unknown type of mutation: {mutation}")
-        else:
-            self.real_mutation = mutation
-            
-        if type(selection) == str:
-            if selection == 'fully_random':
-                self.selection = Selection.fully_random()
-            elif selection == 'roulette':
-                self.selection = Selection.roulette()
-            elif selection == 'stochastic':
-                self.selection = Selection.stochastic()
-            elif selection == 'sigma_scaling':
-                self.selection = Selection.sigma_scaling()
-            elif selection == 'ranking':
-                self.selection = Selection.ranking()
-            elif selection == 'linear_ranking':
-                self.selection = Selection.linear_ranking()
-            elif selection == 'tournament':
-                self.selection = Selection.tournament()
-            else:
-                raise Exception(f"unknown type of selection: {selection}")                
-        else:
-            self.selection = selection
+    def __set_types_indexes(self, variable_type, variable_type_mixed):
 
+        indexes = np.arange(self.dim)
+        self.indexes_int = np.array([])
+        self.indexes_float = np.array([])
 
-        ############################################################# 
-    
+        #############################################################
+        # input variable type
+
+        assert (variable_type in ( 'bool', 'int', 'real')), f"\n variable_type must be 'bool', 'int', or 'real', got {variable_type}"
+        #############################################################
+        # input variables' type (MIXED)
+
+        if variable_type_mixed is None:
+
+            if variable_type == 'real':
+                # self.var_type = np.array([['real']]*self.dim)
+                self.indexes_float = indexes
+            else:
+                # self.var_type = np.array([['int']]*self.dim)
+                self.indexes_int = indexes
+
+        else:
+
+            assert (len(variable_type_mixed) == self.dim), "\n variable_type must have a length equal dimension."
+            for i in variable_type_mixed:
+                assert (i in ('real',
+                              'int')), "\n variable_type_mixed is either 'int' or 'real' " + "ex:['int','real','real']" + "\n for 'boolean' use 'int' and specify boundary as [0,1]"
+
+            vartypes = np.array(variable_type_mixed)
+
+            # self.var_type = variable_type_mixed
+            self.indexes_int = indexes[vartypes == 'int']
+            self.indexes_float = indexes[vartypes == 'real']
+
+    def __set_var_boundaries(self, variable_type, variable_type_mixed, variable_boundaries):
+        if variable_type != 'bool' or variable_type_mixed is not None:
+
+            if is_numpy(variable_boundaries):
+                assert variable_boundaries.shape == (self.dim, 2), f"\n if variable_boundaries is numpy array, it must be with shape (dim, 2)"
+            else:
+                assert len(variable_boundaries) == self.dim and all((len(t) == 2 for t in variable_boundaries)), "\n if variable_boundaries is sequence, it must be with len dim and boundary for each variable must be a tuple of length two"
+
+            for i in variable_boundaries:
+                assert(i[0]<=i[1]), "\n lower_boundaries must be smaller than upper_boundaries [lower,upper]"
+
+            self.var_bound = np.array(variable_boundaries)
+        else:
+            self.var_bound = np.array([[0,1]]*self.dim)
+
 
     def __convert_start_generation(self, start_generation):
 
@@ -350,7 +298,11 @@ class geneticalgorithm2:
         return start_generation
 
 
-    def run(self, no_plot = False, 
+
+
+
+    def run(self,
+            no_plot = False,
             disable_progress_bar = False, 
             disable_printing = False,
 
