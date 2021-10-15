@@ -95,54 +95,10 @@ class geneticalgorithm2:
                  function_timeout:float = 10,
                  algorithm_parameters: Union[AlgorithmParams, Dict[str, Any]] = default_params):
         '''
-        @param function <Callable> - the given objective function to be minimized
-        NOTE: This implementation minimizes the given objective function. 
-        (For maximization multiply function by a negative sign: the absolute 
-        value of the output would be the actual objective function)
-        
-        @param dimension <integer> - the number of decision variables
-        
-        @param variable_type <string> - 'bool' if all variables are Boolean; 
-        'int' if all variables are integer; and 'real' if all variables are
-        real value or continuous (for mixed type see @param variable_type_mixed)
-        
-        @param variable_boundaries <numpy array/None> - Default None; leave it 
-        None if variable_type is 'bool'; otherwise provide an array of tuples 
-        of length two as boundaries for each variable; 
-        the length of the array must be equal dimension. For example, 
-        np.array([0,100],[0,200]) determines lower boundary 0 and upper boundary 100 for first 
-        and upper boundary 200 for second variable where dimension is 2.
-        
-        @param variable_type_mixed <numpy array/None> - Default None; leave it 
-        None if all variables have the same type; otherwise this can be used to
-        specify the type of each variable separately. For example if the first 
-        variable is integer but the second one is real the input is: 
-        np.array(['int'],['real']). NOTE: it does not accept 'bool'. If variable
-        type is Boolean use 'int' and provide a boundary as [0,1] 
-        in variable_boundaries. Also if variable_type_mixed is applied, 
-        variable_boundaries has to be defined.
-        
-        @param function_timeout <float> - if the given function does not provide 
-        output before function_timeout (unit is seconds) the algorithm raise error.
-        For example, when there is an infinite loop in the given function. 
-        
-        @param algorithm_parameters:
-            @ max_num_iteration <int> - stoping criteria of the genetic algorithm (GA)
-            @ population_size <int> 
-            @ mutation_probability <float in [0,1]>
-            @ elit_ratio <float in [0,1]>
-            @ crossover_probability <float in [0,1]>
-            @ parents_portion <float in [0,1]>
-            @ crossover_type <string/function> - Default is 'uniform'; 'one_point' or 'two_point' (not only) are other options
-            @ mutation_type <string/function> - Default is 'uniform_by_x'; see GitHub to check other options
-            @ selection_type <string/function> - Default is 'roulette'; see GitHub to check other options
-            @ max_iteration_without_improv <int> - maximum number of successive iterations without improvement. If None it is ineffective
-        
         for more details and examples of implementation please visit:
             https://github.com/PasaOpasen/geneticalgorithm2
   
         '''
-        self.__name__ = geneticalgorithm2
 
         # input algorithm's parameters
 
@@ -186,33 +142,9 @@ class geneticalgorithm2:
         self.__set_elit(self.pop_s, self.param['elit_ratio'])
         assert(self.par_s>=self.num_elit), "\n number of parents must be greater than number of elits"
 
+        self.__set_max_iterations()
 
 
-        if self.param['max_num_iteration'] is None:
-            iterate = 0
-            for i in range (0, self.dim):
-                if i in self.indexes_int:
-                    iterate += (self.var_bound[i][1]-self.var_bound[i][0])*self.dim*(100/self.pop_s)
-                else:
-                    iterate += (self.var_bound[i][1]-self.var_bound[i][0])*50*(100/self.pop_s)
-            iterate = int(self.iterate)
-            if (iterate*self.pop_s)>10000000:
-                iterate=10000000/self.pop_s
-            
-            if iterate > 8000:
-                iterate = 8000
-
-            self.iterate = iterate
-
-        else:
-            self.iterate = int(self.param['max_num_iteration'])
-          
-        self.stop_mniwi = False # is stopped cuz of no progress some iterations
-        max_it = self.param['max_iteration_without_improv']
-        if max_it is None:
-            self.mniwi = self.iterate + 1
-        else: 
-            self.mniwi = int(max_it)
 
 
     def __set_par_s(self, parents_portion):
@@ -279,6 +211,35 @@ class geneticalgorithm2:
             self.var_bound = np.array(variable_boundaries)
         else:
             self.var_bound = np.array([[0,1]]*self.dim)
+
+    def __set_max_iterations(self):
+
+        if self.param['max_num_iteration'] is None:
+            iterate = 0
+            for i in range(0, self.dim):
+                if i in self.indexes_int:
+                    iterate += (self.var_bound[i][1] - self.var_bound[i][0]) * self.dim * (100 / self.pop_s)
+                else:
+                    iterate += (self.var_bound[i][1] - self.var_bound[i][0]) * 50 * (100 / self.pop_s)
+            iterate = int(self.iterate)
+            if (iterate * self.pop_s) > 10000000:
+                iterate = 10000000 / self.pop_s
+
+            if iterate > 8000:
+                iterate = 8000
+
+            self.iterate = iterate
+
+        else:
+            self.iterate = int(self.param['max_num_iteration'])
+
+        self.stop_mniwi = False  # is stopped cuz of no progress some iterations
+        max_it = self.param['max_iteration_without_improv']
+        if max_it is None:
+            self.mniwi = self.iterate + 1
+        else:
+            self.mniwi = int(max_it)
+
 
 
     def __convert_start_generation(self, start_generation):
