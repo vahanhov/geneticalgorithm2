@@ -1,4 +1,4 @@
-
+from __future__ import annotations
 
 from typing import Dict, Any, List, Optional, Union, Callable, Tuple
 
@@ -138,6 +138,73 @@ class AlgorithmParams(DictLikeGetter):
 
             setattr(result, name, value)
         return result
+
+
+@dataclass
+class Generation(DictLikeGetter):
+    variables: Optional[np.ndarray] = None
+    scores: Optional[np.ndarray] = None
+
+    def __check_dims(self):
+        if self.variables is not None:
+            assert len(self.variables.shape) == 2, f"'variables' must be matrix with shape (objects, dimensions), not {self.variables.shape}"
+            if self.scores is not None:
+                assert len(self.scores.shape) == 1, f"'scores' must be 1D-array, not with shape {self.scores.shape}"
+                assert self.variables.shape[0] == self.scores.size, f"count of objects ({self.variables.shape[0]}) must be equal to count of scores ({self.scores.size})"
+
+    @property
+    def size(self):
+        return self.scores.size
+    @property
+    def dim_size(self):
+        return self.variables.shape[1]
+
+
+
+    @staticmethod
+    def from_object(dim: int, object: Union[str, Dict[str, np.ndarray], Generation]):
+
+        obj_type = type(object)
+
+        if obj_type == str:
+            try:
+                st = np.load(object)
+            except Exception as err:
+                raise Exception(
+                    f"if generation object is a string, it must be path to npz file with needed content, but raised exception {repr(err)}"
+                )
+
+            assert 'population' in st and 'scores' in st, "saved generation object must contain 'population' and 'scores' fields"
+
+            generation = Generation(variables = st['population'], scores = st['scores'])
+
+        elif obj_type == dict:
+            assert (('variables' in object and 'scores' in object) and (
+                             object['variables'] is None or object['scores'] is None) or (
+                                     object['variables'].shape[0] == object[
+                                 'scores'].size)), "start_generation object must contain 'variables' and 'scores' keys which are None or 2D- and 1D-arrays with same shape"
+
+            generation = Generation(variables=object['variables'], scores=object['scores'])
+
+        elif obj_type == Generation:
+            generation = Generation(variables=object['variables'], scores=object['scores'])
+        else:
+            raise TypeError(f"invalid type of generation! Must be in (str, Dict[str, np.ndarray], Generation), not {obj_type}")
+
+
+        generation.__check_dims()
+
+        if generation.variables is not None:
+            assert generation.dim_size == dim, f"generation dimension size {generation.dim_size} does not equal to target size {dim}"
+
+        return generation
+
+
+
+
+
+
+
 
 
 

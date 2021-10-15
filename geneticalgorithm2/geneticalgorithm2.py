@@ -27,6 +27,7 @@ SOFTWARE.
 ###############################################################################
 
 from typing import Callable, List, Tuple, Optional, Dict, Any, Union, Sequence
+import warnings
 
 
 import sys
@@ -46,7 +47,7 @@ from OppOpPopInit import init_population, SampleInitializers, OppositionOperator
 
 ###############################################################################
 
-from.classes import AlgorithmParams
+from.classes import AlgorithmParams, Generation
 
 
 from .initializer import Population_initializer
@@ -95,6 +96,50 @@ class geneticalgorithm2:
                  function_timeout:float = 10,
                  algorithm_parameters: Union[AlgorithmParams, Dict[str, Any]] = default_params):
         '''
+        @param function <Callable[[np.ndarray], float]> - the given objective function to be minimized
+        NOTE: This implementation minimizes the given objective function.
+        (For maximization multiply function by a negative sign: the absolute
+        value of the output would be the actual objective function)
+
+        @param dimension <integer> - the number of decision variables
+
+        @param variable_type <string> - 'bool' if all variables are Boolean;
+        'int' if all variables are integer; and 'real' if all variables are
+        real value or continuous (for mixed type see @param variable_type_mixed)
+
+        @param variable_boundaries <Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]]> - Default None; leave it
+        None if variable_type is 'bool'; otherwise provide an array of tuples
+        of length two as boundaries for each variable;
+        the length of the array must be equal dimension. For example,
+        np.array([0,100],[0,200]) determines lower boundary 0 and upper boundary 100 for first
+        and upper boundary 200 for second variable where dimension is 2.
+
+        @param variable_type_mixed <Optional[Sequence[str]]> - Default None; leave it
+        None if all variables have the same type; otherwise this can be used to
+        specify the type of each variable separately. For example if the first
+        variable is integer but the second one is real the input is:
+        np.array(['int'],['real']). NOTE: it does not accept 'bool'. If variable
+        type is Boolean use 'int' and provide a boundary as [0,1]
+        in variable_boundaries. Also if variable_type_mixed is applied,
+        variable_boundaries has to be defined.
+
+        @param function_timeout <float> - if the given function does not provide
+        output before function_timeout (unit is seconds) the algorithm raise error.
+        For example, when there is an infinite loop in the given function.
+
+        @param algorithm_parameters <Union[AlgorithmParams, Dict[str, Any]]>:
+            @ max_num_iteration <int> - stoping criteria of the genetic algorithm (GA)
+            @ population_size <int>
+            @ mutation_probability <float in [0,1]>
+            @ elit_ratio <float in [0,1]>
+            @ crossover_probability <float in [0,1]>
+            @ parents_portion <float in [0,1]>
+            @ crossover_type <string/function> - Default is 'uniform'; 'one_point' or 'two_point' (not only) are other options
+            @ mutation_type <string/function> - Default is 'uniform_by_x'; see GitHub to check other options
+            @ selection_type <string/function> - Default is 'roulette'; see GitHub to check other options
+            @ max_iteration_without_improv <int> - maximum number of successive iterations without improvement. If None it is ineffective
+
+
         for more details and examples of implementation please visit:
             https://github.com/PasaOpasen/geneticalgorithm2
   
@@ -143,8 +188,6 @@ class geneticalgorithm2:
         assert(self.par_s>=self.num_elit), "\n number of parents must be greater than number of elits"
 
         self.__set_max_iterations()
-
-
 
 
     def __set_par_s(self, parents_portion):
@@ -242,36 +285,18 @@ class geneticalgorithm2:
 
 
 
-    def __convert_start_generation(self, start_generation):
-
-        tp = type(start_generation)
-        if tp == dict:
-            assert(('variables' in start_generation and 'scores' in start_generation) and (start_generation['variables'] is None or start_generation['scores'] is None) or (start_generation['variables'].shape[0] == start_generation['scores'].size)), "start_generation object must contain 'variables' and 'scores' keys which are None or 2D- and 1D-arrays with same shape"
-        elif tp == str:
-            st = np.load(start_generation) 
-            start_generation = {'variables':st['population'], 'scores': st['scores']}
-        else:
-            raise TypeError(f"invalid type of start_generation argument! Must be str or dict, not {tp}")
-        
-
-        assert(start_generation['variables'] is None or start_generation['variables'].shape[1] == self.dim), f"start_generation['variables'] must be None or 2D-array with dimension == {self.dim} count of columns"
-
-        return start_generation
-
-
-
 
 
     def run(self,
-            no_plot = False,
-            disable_progress_bar = False, 
-            disable_printing = False,
+            no_plot: bool = False,
+            disable_progress_bar: bool = False,
+            disable_printing: bool = False,
 
-            set_function = None, 
-            apply_function_to_parents = False, 
-            start_generation = {'variables':None, 'scores': None}, 
-            studEA = False, 
-            mutation_indexes = None,
+            set_function: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+            apply_function_to_parents: bool = False,
+            start_generation: Union[str, Dict[str, np.ndarray], Generation] = Generation(),
+            studEA: bool = False,
+            mutation_indexes: Optional[Sequence[int]] = None,
 
             init_creator = None,
             init_oppositors = None,
@@ -290,7 +315,7 @@ class geneticalgorithm2:
             middle_callbacks = [],
             time_limit_secs = None,  
             save_last_generation_as = None,
-            seed = None):
+            seed: Optional[int] = None):
         """
         @param no_plot <boolean> - do not plot results using matplotlib by default
         
@@ -301,12 +326,12 @@ class geneticalgorithm2:
         
         @param apply_function_to_parents <boolean> - apply function to parents from previous generation (if it's needed)
                                                                                                          
-        @param start_generation <dictionary/str> - a dictionary with structure {'variables':2D-array of samples, 'scores': function values on samples} or path to .npz file (str) with saved generation                                                                                                
+        @param start_generation <dictionary/str/Generation object> - Generation object or a dictionary with structure {'variables':2D-array of samples, 'scores': function values on samples} or path to .npz file (str) with saved generation
         if 'scores' value is None the scores will be compute
 
         @param studEA <boolean> - using stud EA strategy (crossover with best object always)
         
-        @param mutation_indexes <list/tuple/numpy array> - indexes of dimensions where mutation can be performed (all dimensions by default)
+        @param mutation_indexes <Optional[Sequence[int]]> - indexes of dimensions where mutation can be performed (all dimensions by default)
 
         @param init_creator: None/function, the function creates population samples. By default -- random uniform for real variables and random uniform for int
         @param init_oppositors: None/function list, the list of oppositors creates oppositions for base population. No by default
@@ -328,16 +353,21 @@ class geneticalgorithm2:
 
         @param save_last_generation_as (str) - path to .npz file for saving last_generation as numpy dictionary like {'population': 2D-array, 'scores': 1D-array}, None if doesn't need to save in file
 
-        @param seed - random seed (None is doesn't matter)
+        @param seed - random seed (None if doesn't matter)
         """
         
         if not (mutation_indexes is None):
             tmp_indexes = set(mutation_indexes)
             self.indexes_int_mut = np.array(list(set(self.indexes_int).intersection(tmp_indexes)))
             self.indexes_float_mut = np.array(list(set(self.indexes_float).intersection(tmp_indexes)))
+
+            if self.indexes_float_mut.size == 0 and self.indexes_int_mut.size == 0:
+                warnings.warn(f"No mutation dimensions!!! Check ur mutation indexes!!")
+
         else:
             self.indexes_float_mut = self.indexes_float
             self.indexes_int_mut = self.indexes_int
+
 
 
         current_gen_number = lambda number: (number is None) or (type(number) == int and number > 0)
@@ -350,10 +380,11 @@ class geneticalgorithm2:
         assert (type(middle_callbacks) == list), "middle_callbacks should be list of MiddleCallbacks functions"
         assert (time_limit_secs is None or time_limit_secs > 0), 'time_limit_secs must be None of number > 0'
         
-        start_generation = self.__convert_start_generation(start_generation)
+        
+        start_generation = Generation.from_object(self.dim, start_generation)
 
 
-        if not (seed is None):
+        if seed is not None:
             random.seed(seed)
             np.random.seed(seed)
 
