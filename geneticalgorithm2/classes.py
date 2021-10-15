@@ -34,7 +34,7 @@ class AlgorithmParams(DictLikeGetter):
     max_num_iteration: Optional[int] = None
     max_iteration_without_improv: Optional[int] = None
 
-    population_size: int = 100,
+    population_size: int = 100
 
     mutation_probability: float = 0.1
     elit_ratio: float = 0.01
@@ -160,6 +160,23 @@ class Generation(DictLikeGetter):
         return self.variables.shape[1]
 
 
+    def save(self, path: str):
+        np.savez(path, population = self.variables, scores = self.scores)
+
+
+    @staticmethod
+    def load(path: str):
+        try:
+            st = np.load(path)
+        except Exception as err:
+            raise Exception(
+                f"if generation object is a string, it must be path to npz file with needed content, but raised exception {repr(err)}"
+            )
+
+        assert 'population' in st and 'scores' in st, "saved generation object must contain 'population' and 'scores' fields"
+
+        return Generation(variables=st['population'], scores=st['scores'])
+
 
     @staticmethod
     def from_object(dim: int, object: Union[str, Dict[str, np.ndarray], Generation]):
@@ -167,16 +184,8 @@ class Generation(DictLikeGetter):
         obj_type = type(object)
 
         if obj_type == str:
-            try:
-                st = np.load(object)
-            except Exception as err:
-                raise Exception(
-                    f"if generation object is a string, it must be path to npz file with needed content, but raised exception {repr(err)}"
-                )
 
-            assert 'population' in st and 'scores' in st, "saved generation object must contain 'population' and 'scores' fields"
-
-            generation = Generation(variables = st['population'], scores = st['scores'])
+            generation = Generation.load(object)
 
         elif obj_type == dict:
             assert (('variables' in object and 'scores' in object) and (
@@ -199,8 +208,12 @@ class Generation(DictLikeGetter):
 
         return generation
 
-
-
+    @staticmethod
+    def from_pop_matrix(pop: np.ndarray):
+        return Generation(
+            variables = pop[:, :-1],
+            scores = pop[:, -1]
+        )
 
 
 

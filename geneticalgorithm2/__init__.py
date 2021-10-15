@@ -22,6 +22,9 @@ SOFTWARE.
 
 '''
 
+
+from .classes import Generation, AlgorithmParams
+
 from .geneticalgorithm2 import geneticalgorithm2
 
 from .mutations import Mutations

@@ -1,6 +1,6 @@
 '''
 
-Copyright 2020 Ryan (Mohammad) Solgi, Demetry Pascal
+Copyright 2021 Demetry Pascal (forked from Ryan (Mohammad) Solgi)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of 
 this software and associated documentation files (the "Software"), to deal in 
@@ -26,7 +26,8 @@ SOFTWARE.
 ###############################################################################
 ###############################################################################
 
-from typing import Callable, List, Tuple, Optional, Dict, Any, Union, Sequence
+from typing import Callable, List, Tuple, Optional, Dict, Any, Union, Sequence, Set
+import collections
 import warnings
 
 
@@ -285,6 +286,32 @@ class geneticalgorithm2:
 
 
 
+    #
+    #
+    # RUN METHODS
+    #
+    #
+
+    def __set_mutation_indexes(self, mutation_indexes):
+
+        if mutation_indexes is not None:
+            tmp_indexes = set(mutation_indexes)
+            self.indexes_int_mut = np.array(list(set(self.indexes_int).intersection(tmp_indexes)))
+            self.indexes_float_mut = np.array(list(set(self.indexes_float).intersection(tmp_indexes)))
+
+            if self.indexes_float_mut.size == 0 and self.indexes_int_mut.size == 0:
+                warnings.warn(f"No mutation dimensions!!! Check ur mutation indexes!!")
+
+        else:
+            self.indexes_float_mut = self.indexes_float
+            self.indexes_int_mut = self.indexes_int
+
+    def __set_seed(self, seed):
+        if seed is not None:
+            random.seed(seed)
+            np.random.seed(seed)
+
+
 
 
     def run(self,
@@ -296,25 +323,25 @@ class geneticalgorithm2:
             apply_function_to_parents: bool = False,
             start_generation: Union[str, Dict[str, np.ndarray], Generation] = Generation(),
             studEA: bool = False,
-            mutation_indexes: Optional[Sequence[int]] = None,
+            mutation_indexes: Optional[Union[Sequence[int], Set[int]]] = None,
 
-            init_creator = None,
-            init_oppositors = None,
+            init_creator = None,#+
+            init_oppositors = None,#+
 
-            duplicates_oppositor = None,
-            remove_duplicates_generation_step = None,
+            duplicates_oppositor = None,#+
+            remove_duplicates_generation_step = None,#+
 
-            revolution_oppositor = None,
-            revolution_after_stagnation_step = None,
-            revolution_part = 0.3,
+            revolution_oppositor = None,#+
+            revolution_after_stagnation_step = None,#+
+            revolution_part: float = 0.3,
             
-            population_initializer = Population_initializer(select_best_of = 1, local_optimization_step = 'never', local_optimizer = None), 
+            population_initializer = Population_initializer(select_best_of = 1, local_optimization_step = 'never', local_optimizer = None),  #+
             
-            stop_when_reached = None,
-            callbacks = [],
-            middle_callbacks = [],
-            time_limit_secs = None,  
-            save_last_generation_as = None,
+            stop_when_reached: Optional[float] = None,
+            callbacks: Sequence = [], #+
+            middle_callbacks: Sequence = [], #+
+            time_limit_secs: Optional[float] = None,
+            save_last_generation_as: Optional[str] = None,
             seed: Optional[int] = None):
         """
         @param no_plot <boolean> - do not plot results using matplotlib by default
@@ -331,7 +358,7 @@ class geneticalgorithm2:
 
         @param studEA <boolean> - using stud EA strategy (crossover with best object always)
         
-        @param mutation_indexes <Optional[Sequence[int]]> - indexes of dimensions where mutation can be performed (all dimensions by default)
+        @param mutation_indexes <Optional[Union[Sequence[int], Set[int]]]> - indexes of dimensions where mutation can be performed (all dimensions by default)
 
         @param init_creator: None/function, the function creates population samples. By default -- random uniform for real variables and random uniform for int
         @param init_oppositors: None/function list, the list of oppositors creates oppositions for base population. No by default
@@ -349,26 +376,14 @@ class geneticalgorithm2:
 
         @param middle_callbacks (list) - list of functions made MiddleCallbacks class 
 
-        @param time_limit_secs (None / number>0) - limit time of working (in seconds)
+        @param time_limit_secs (Optional[float] / number>0) - limit time of working (in seconds)
 
-        @param save_last_generation_as (str) - path to .npz file for saving last_generation as numpy dictionary like {'population': 2D-array, 'scores': 1D-array}, None if doesn't need to save in file
+        @param save_last_generation_as (Optional[str]) - path to .npz file for saving last_generation as numpy dictionary like {'population': 2D-array, 'scores': 1D-array}, None if doesn't need to save in file
 
-        @param seed - random seed (None if doesn't matter)
+        @param seed (None/int) - random seed (None if doesn't matter)
         """
-        
-        if not (mutation_indexes is None):
-            tmp_indexes = set(mutation_indexes)
-            self.indexes_int_mut = np.array(list(set(self.indexes_int).intersection(tmp_indexes)))
-            self.indexes_float_mut = np.array(list(set(self.indexes_float).intersection(tmp_indexes)))
 
-            if self.indexes_float_mut.size == 0 and self.indexes_int_mut.size == 0:
-                warnings.warn(f"No mutation dimensions!!! Check ur mutation indexes!!")
-
-        else:
-            self.indexes_float_mut = self.indexes_float
-            self.indexes_int_mut = self.indexes_int
-
-
+        start_generation = Generation.from_object(self.dim, start_generation)
 
         current_gen_number = lambda number: (number is None) or (type(number) == int and number > 0)
 
@@ -376,32 +391,28 @@ class geneticalgorithm2:
         assert current_gen_number(remove_duplicates_generation_step), "must be None or int and >0"
         assert can_be_prob(revolution_part), f"revolution_part must be in [0,1], not {revolution_part}"
         assert (stop_when_reached is None or type(stop_when_reached) in (int, float))
-        assert (type(callbacks) == list), "callbacks should be list of callbacks functions"
-        assert (type(middle_callbacks) == list), "middle_callbacks should be list of MiddleCallbacks functions"
+        assert (isinstance(callbacks, collections.Sequence)), "callbacks should be list of callbacks functions"
+        assert (isinstance(middle_callbacks, collections.Sequence)), "middle_callbacks should be list of MiddleCallbacks functions"
         assert (time_limit_secs is None or time_limit_secs > 0), 'time_limit_secs must be None of number > 0'
-        
-        
-        start_generation = Generation.from_object(self.dim, start_generation)
 
 
-        if seed is not None:
-            random.seed(seed)
-            np.random.seed(seed)
+        self.__set_mutation_indexes(mutation_indexes)
+        self.__set_seed(seed)
+
 
         show_progress = (lambda t, t2, s: self.__progress(t, t2, status = s)) if not disable_progress_bar else (lambda t, t2, s: None)
-        
+
+        # gets indexes of 2 parents to crossover
         get_parents_inds = (lambda par_count: (0, random.randrange(1, par_count))) if studEA else (lambda par_count: tuple(np.random.randint(0, par_count, 2)))
         
         stop_by_val = (lambda best_f: False) if stop_when_reached is None else (lambda best_f: best_f <= stop_when_reached)
-        
-        def total_callback(generation_number, report_list, last_population, last_scores): 
-            for cb in callbacks: 
-                cb(generation_number, report_list, last_population, last_scores)
-        
+
 
         t = 0
         counter = 0
         pop = None
+        obj = None
+
 
         def get_data():
             """
@@ -456,8 +467,12 @@ class geneticalgorithm2:
             self.mniwi = data['max_stagnation']
 
             self.set_function = data['set_function']
-            
 
+
+
+        def total_callback(generation_number, report_list, last_population, last_scores):
+            for cb in callbacks:
+                cb(generation_number, report_list, last_population, last_scores)
 
         def total_middle_callback():
             """
@@ -471,20 +486,22 @@ class geneticalgorithm2:
             if flag:
                 set_data(data) # update global date if there was real callback step
 
+        if len(callbacks) == 0:
+            total_callback = lambda g, r, lp, ls: None
         if len(middle_callbacks) == 0:
-            total_middle_callback = lambda: None
+            total_middle_callback = lambda : None
 
 
-        start_time = time.time()
-        time_is_done = (lambda: False) if time_limit_secs is None else (lambda: int(time.time() - start_time) >= time_limit_secs)
+
+        start_time = time.process_time()
+        time_is_done = (lambda: False) if time_limit_secs is None else (lambda: int(time.process_time() - start_time) >= time_limit_secs)
+
 
         ############################################################# 
         # Initial Population
         
-        self.set_function = set_function
+        self.set_function = geneticalgorithm2.default_set_function(self.f) if set_function is None else set_function
 
-        if self.set_function == None:
-            self.set_function = geneticalgorithm2.default_set_function(self.f)
         
         pop_coef, initializer_func = population_initializer
         
@@ -591,7 +608,7 @@ class geneticalgorithm2:
 
         # initialization of pop
         
-        if start_generation['variables'] is None:
+        if start_generation.variables is None:
                     
             pop = np.empty((self.pop_s*pop_coef, self.dim+1)) #np.array([np.zeros(self.dim+1)]*self.pop_s)
             solo = np.empty(self.dim+1)
@@ -617,19 +634,16 @@ class geneticalgorithm2:
             if not disable_printing: print(f"\n\r Average time of function evaluating (secs): {time_counter/pop.shape[0]}\n")
                 
         else:
-            assert (start_generation['variables'].shape[1] == self.dim), f"incorrect dimention ({start_generation['variables'].shape[1]}) of population, should be {self.dim}"
-            
-            self.pop_s = start_generation['variables'].shape[0]
-            self.__set_elit(self.pop_s, self.param['elit_ratio'])
-            self.__set_par_s(self.param['parents_portion'])
+
+            self.pop_s = start_generation.size
+            self.__set_elit(self.pop_s, self.param.elit_ratio)
+            self.__set_par_s(self.param.parents_portion)
 
             pop = np.empty((self.pop_s, self.dim+1))
-            pop[:,:-1] = start_generation['variables']
+            pop[:,:-1] = start_generation.variables
             
-            if not (start_generation['scores'] is None):
-                assert (start_generation['scores'].size == start_generation['variables'].shape[0]), f"count of samples ({start_generation['variables'].shape[0]}) must be equal score length ({start_generation['scores'].size})"
-                
-                pop[:, -1] = start_generation['scores']
+            if start_generation.scores is not None:
+                pop[:, -1] = start_generation.scores
             else:
                 pop[:, -1] = self.set_function(pop[:,:-1])
             
@@ -659,7 +673,7 @@ class geneticalgorithm2:
         ##############################################################   
         
         t = 1
-        counter = 0
+        counter = 0 # iterations without progress
         while t <= self.iterate:
             
             show_progress(t, self.iterate, f"GA is running...{t} gen from {self.iterate}")
@@ -667,11 +681,11 @@ class geneticalgorithm2:
             #############################################################
             #Sort
             pop = pop[pop[:,self.dim].argsort()]
+            gen_scores = pop[:,self.dim]
 
-                
             if pop[0,self.dim] < self.best_function: # if there is progress
                 counter = 0
-                self.best_function=pop[0, self.dim]
+                self.best_function=gen_scores[0]
                 self.best_variable=pop[0,:self.dim].copy()
                 
                 show_progress(t, self.iterate, f"GA is running...{t} gen from {self.iterate}...best value = {self.best_function}")
@@ -680,9 +694,9 @@ class geneticalgorithm2:
             #############################################################
             # Report
 
-            self.report.append(pop[0, self.dim])
-            self.report_min.append(pop[-1, self.dim])
-            self.report_average.append(np.mean(pop[:, self.dim]))
+            self.report.append(gen_scores[0])
+            self.report_min.append(gen_scores[-1])
+            self.report_average.append(gen_scores.mean())
     
 
   
@@ -695,14 +709,14 @@ class geneticalgorithm2:
             par[:self.num_elit, :] = pop[:self.num_elit, :].copy()
                 
             # non-elit parents indexes
-            #new_par_inds = np.int8(ff(pop[self.num_elit:, self.dim], self.par_s - self.num_elit) + self.num_elit)
-            new_par_inds = np.int8(self.selection(pop[:, self.dim], self.par_s - self.num_elit))
+            new_par_inds = self.selection(pop[:, self.dim], self.par_s - self.num_elit).astype(np.int8)
             par[self.num_elit:self.par_s] = pop[new_par_inds].copy()
             
             
             # select parents for crossover
-            par_count = 0
-            while par_count < 2:                
+            ef_par_list = np.random.random(self.par_s) <= self.prob_cross
+            par_count = np.sum(ef_par_list)
+            while par_count < 2: # 2 parents at least
                 ef_par_list = np.random.random(self.par_s) <= self.prob_cross
                 par_count = np.sum(ef_par_list)
                  
@@ -710,9 +724,9 @@ class geneticalgorithm2:
     
             #############################################################  
             #New generation
-            pop = np.empty((self.pop_s, self.dim+1))  #np.array([np.zeros(self.dim+1)]*self.pop_s)
+            pop = np.empty((self.pop_s, self.dim+1))
             
-            pop[:self.par_s, :] = par[:self.par_s, :].copy()
+            pop[:self.par_s, :] = par[:self.par_s, :].copy() # copy parents to next generation
                 
             for k in range(self.par_s, self.pop_s, 2):
                 r1, r2 = get_parents_inds(par_count)
@@ -725,12 +739,10 @@ class geneticalgorithm2:
                     ch1 = self.mut(ch1)
                     ch2 = self.mut_middle(ch2, pvar1, pvar2)               
                 
-                solo[: self.dim] = ch1.copy()                
-                #solo[self.dim] = self.sim(ch1)
+                solo[:self.dim] = ch1.copy()
                 pop[k] = solo.copy()                
                 
-                solo[: self.dim] = ch2.copy()                             
-                #solo[self.dim] = self.sim(ch2) 
+                solo[:self.dim] = ch2.copy()
                 pop[k+1] = solo.copy()
                 
             
@@ -765,31 +777,31 @@ class geneticalgorithm2:
         #Sort
         pop = pop[pop[:,self.dim].argsort()]
         
-        if pop[0,self.dim] < self.best_function:
+        if pop[0, self.dim] < self.best_function:
                 
-            self.best_function=pop[0,self.dim]#.copy()
-            self.best_variable=pop[0,: self.dim].copy()
+            self.best_function=pop[0,self.dim]
+            self.best_variable=pop[0,:self.dim].copy()
+
         #############################################################
         # Report
 
-        self.report.append(pop[0,self.dim])
+        self.report.append(pop[0, self.dim])
         self.report_min.append(pop[-1, self.dim])
         self.report_average.append(np.mean(pop[:, self.dim]))
         
         
- 
+
+
+        last_generation = Generation.from_pop_matrix(pop)
         self.output_dict = {
             'variable': self.best_variable, 
             'function': self.best_function,
-            'last_generation': {
-                'variables':pop[:, :-1],
-                'scores': pop[:, -1]
-                }
+            'last_generation': last_generation
             }
         
 
-        if not (save_last_generation_as is None):
-            np.savez(save_last_generation_as, population = self.output_dict['last_generation']['variables'], scores = self.output_dict['last_generation']['scores'] )
+        if save_last_generation_as is not None:
+            last_generation.save(save_last_generation_as)
 
 
         if not disable_printing:
@@ -798,7 +810,7 @@ class geneticalgorithm2:
             sys.stdout.write(f'\r The best found solution:\n {self.best_variable}')
             sys.stdout.write(f'\n\n Objective function:\n {self.best_function}\n')
             sys.stdout.write(f'\n Used generations: {len(self.report)}')
-            sys.stdout.write(f'\n Used time: {int(time.time() - start_time)} seconds\n')
+            sys.stdout.write(f'\n Used time: {int(time.process_time() - start_time)} seconds\n')
             sys.stdout.flush() 
         
         if not no_plot:
@@ -811,6 +823,7 @@ class geneticalgorithm2:
                 sys.stdout.write(f'\nWarning: GA is terminated because of reaching stop_when_reached (current val {self.best_function} <= {stop_when_reached})!')
             elif time_is_done():
                 sys.stdout.write(f'\nWarning: GA is terminated because of time limit ({time_limit_secs} secs) of working!')
+
 
 ##############################################################################         
 
@@ -841,7 +854,7 @@ class geneticalgorithm2:
 
         plt.show()
 
-    def plot_generation_scores(self, title = 'Last generation scores', save_as = None):
+    def plot_generation_scores(self, title: str = 'Last generation scores', save_as: Optional[str] = None):
         """
         Plots barplot of scores of last population
         """
@@ -849,22 +862,23 @@ class geneticalgorithm2:
         if not hasattr(self, 'output_dict'):
             raise Exception("There is no output_dict field into ga object! Before plotting generation u need to run seaching process")
 
-        plot_pop_scores(self.output_dict['last_generation']['scores'], title, save_as)
+        plot_pop_scores(self.output_dict['last_generation'].scores, title, save_as)
 
 
 ###############################################################################  
     
-    def mut(self, x):
+    def mut(self, x: np.ndarray):
         """
         just mutation
+
+        can be speeded up by np.intersection1d ?
         """
         random_values = np.random.random(x.size)
-        #raise Exception()
+
         for i in self.indexes_int_mut:
             if random_values[i] < self.prob_mut:
                 x[i] = np.random.randint(self.var_bound[i][0], self.var_bound[i][1]+1) 
-                    
-        
+
 
         for i in self.indexes_float_mut:                
             if random_values[i] < self.prob_mut:
@@ -873,7 +887,7 @@ class geneticalgorithm2:
         return x
 
 ###############################################################################
-    def mut_middle(self, x, p1, p2):
+    def mut_middle(self, x: np.ndarray, p1: np.ndarray, p2: np.ndarray):
         """
         mutation oriented on parents
         """
@@ -909,7 +923,7 @@ class geneticalgorithm2:
         self.temp = X#.copy()
         
         obj = None
-        eval_time = time.time()
+        eval_time = time.process_time()
         try:
             obj = func_timeout(self.funtimeout, self.__evaluate)
         except FunctionTimedOut:
@@ -921,7 +935,7 @@ class geneticalgorithm2:
         tp = type(obj)        
         assert (tp in (int, float) or np.issubdtype(tp, np.floating) or np.issubdtype(tp, np.integer) ), f"Minimized function should return a number, but got '{obj}' object with type {tp}"
         
-        return obj, time.time() - eval_time
+        return obj, time.process_time() - eval_time
 
 ###############################################################################
     def __progress(self, count, total, status=''):
