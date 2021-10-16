@@ -28,7 +28,7 @@ _algorithm_params_slots = {'max_num_iteration','max_iteration_without_improv',
     'crossover_type','mutation_type','selection_type'}
 
 
-@dataclass(init = False)
+@dataclass
 class AlgorithmParams(DictLikeGetter):
 
     max_num_iteration: Optional[int] = None

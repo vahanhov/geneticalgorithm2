@@ -12,6 +12,8 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 
 - [About](#about)
 - [Installation](#installation)
+- [Updates information](#updates-information)
+  - [6.3.0 minor update (refactoring)](#630-minor-update-refactoring)
 - [Working process](#working-process)
   - [Methods and Properties of model:](#methods-and-properties-of-model)
   - [Constructor parameters](#constructor-parameters)
@@ -69,13 +71,13 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
   - [How to initialize start population? How to continue optimization with new run?](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)
 # About
 
-**geneticalgorithm2** is a Python library distributed on [PyPI](https://pypi.org) for implementing standard and elitist 
+**geneticalgorithm2** is  very flexible Python library distributed on [PyPI](https://pypi.org) for implementing standard and elitist 
 [genetic-algorithm](https://towardsdatascience.com/introduction-to-optimization-with-genetic-algorithm-2f5001d9964b) (GA).
 
 This package solves *continuous*, [*combinatorial*](https://en.wikipedia.org/wiki/Combinatorial_optimization)
  and *mixed* [optimization](https://en.wikipedia.org/wiki/Optimization_problem) problems 
 with continuous, discrete, and mixed variables.
-It provides an easy implementation of genetic-algorithm (GA) in Python.   
+It provides an easy optimized implementation of genetic-algorithm (GA) in Python.   
     
 # Installation
 
@@ -85,6 +87,18 @@ Use the package manager [pip](https://pip.pypa.io/en/stable/) to install genetic
 pip install geneticalgorithm2
 ```
 
+# Updates information
+
+## 6.3.0 minor update (refactoring)
+
+- type hints for entire part of functions
+- new valid forms for function parameters (now u don't need to use numpy arrays everywhere)
+- `AlgorithmParams` class for base GA algorithm parameters (instead of dictionary)
+- `Generation` class for saving/loading/returning generation (instead of dictionary)
+
+All that classes are collected [in file](geneticalgorithm2/classes.py). To maintain backward compatibility, `AlgorithmParams` and `Generation` classes have dictionary-like interface for getting fields: u can use `object.field` or `object['field']` notations.
+
+
 # Working process
 
 Firstly, u should **import needed packages**. All available imports are:
@@ -93,6 +107,8 @@ Firstly, u should **import needed packages**. All available imports are:
 import numpy as np
 
 from geneticalgorithm2 import geneticalgorithm2 as ga # for creating and running optimization model
+
+from geneticalgorithm2 import Generation, AlgorithmParams # classes for comfortable parameters setting and getting
 
 from geneticalgorithm2 import Crossover, Mutations, Selection # classes for specific mutation and crossover behavior
 
@@ -127,7 +143,15 @@ tagret_result = -global_min
 
 Okay, also u should **create the bounds for each variable** (if exist) like here:
 ```python
-var_bound = np.array([[0,10]]*3) # 2D numpy array
+var_bound = np.array([[0,10]]*3) # 2D numpy array with shape (dim, 2)
+
+# also u can use Sequence of Tuples (from version 6.3.0)
+var_bound = [
+    (0, 10),
+    (0, 10),
+    (0, 10)
+]
+
 ```
 
 After that **create a `geneticalgorithm2` object**:
@@ -148,6 +172,36 @@ model = ga(function, dimension = 3,
                                        'selection_type': 'roulette',
                                        'max_iteration_without_improv':None}
             )
+
+# from version 6.3.0 it is equal to
+
+model = ga(function, dimension = 3, 
+                variable_type='real', 
+                 variable_boundaries = var_bound,
+                 variable_type_mixed = None, 
+                 function_timeout = 10,
+                 algorithm_parameters=AlgorithmParams(
+                     max_num_iteration = None,
+                     population_size = 100,
+                     mutation_probability = 0.1,
+                     elit_ratio = 0.01,
+                     crossover_probability = 0.5,
+                     parents_portion = 0.3,
+                     crossover_type = 'uniform',
+                     mutation_type = 'uniform_by_center',
+                     selection_type = 'roulette',
+                     max_iteration_without_improv = None
+                     )
+            )
+
+# or            
+model = ga(function, dimension = 3, 
+                variable_type='real', 
+                 variable_boundaries = var_bound,
+                 variable_type_mixed = None, 
+                 function_timeout = 10,
+                 algorithm_parameters=AlgorithmParams()
+            )           
 
 ```
 
@@ -189,20 +243,21 @@ Your best solution is computed!
 ## Methods and Properties of model:
 
 **run()**: implements the genetic algorithm (GA) with parameters:
-* param **no_plot** <boolean> - do not plot results using matplotlib by default
 
-* param **disable_progress_bar** <boolean> - do not show progress bar (also it can be faster by 10-20 seconds)
+* param **no_plot** (*bool*) - do not plot results using matplotlib by default
 
-* param **disable_printing** <boolean> - don't print any text (except progress bar)
+* param **disable_progress_bar** (*bool*) - do not show progress bar (also it can be faster by 10-20 seconds)
 
-* param **set_function**: 2D-array -> 1D-array function, which applies to matrix of population (size (samples, dimension)) to estimate their values
+* param **disable_printing** (*bool*) - don't print any text (except progress bar)
+
+* param **set_function** (*Optional[Callable[[np.ndarray], np.ndarray]]*): 2D-array -> 1D-array function, which applies to matrix of population (size (samples, dimension)) to estimate their values
         
-* param **apply_function_to_parents** <boolean> - apply function to parents from previous generation (if it's needed, it can be needed at working with games agents)
+* param **apply_function_to_parents** (*bool*) - apply function to parents from previous generation (if it's needed, it can be needed at working with games agents)
 
-* param **start_generation** <dictionary/str> - a dictionary with structure `{'variables':2D-array of samples, 'scores': function values on samples}` or path to `.npz` file (`str`) with saved generation (see [example](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)). If `'scores'` value is `None` the scores will be compute. [See this](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)  
+* param **start_generation** (*Union[str, Dict[str, np.ndarray], Generation]*) - `Generation` object or a dictionary with structure `{'variables':2D-array of samples, 'scores': function values on samples}` or path to `.npz` file (`str`) with saved generation (see [example](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)). If `'scores'` value is `None` the scores will be compute. [See this](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)  
 
-* param **studEA** <boolean> - using stud EA strategy (crossover with best object always). Default is false. [Take a look](#standard-crossover-vs-stud-ea-crossover)
-* param **mutation_indexes** <list/tuple/numpy array> - indexes of dimensions where mutation can be performed (all dimensions by default). [Example](tests/mut_indexes.py)
+* param **studEA** (*bool*) - using stud EA strategy (crossover with best object always). Default is false. [Take a look](#standard-crossover-vs-stud-ea-crossover)
+* param **mutation_indexes** (*Optional[Union[Sequence[int], Set[int]]]*) - indexes of dimensions where mutation can be performed (all dimensions by default). [Example](tests/mut_indexes.py)
 
 * param **init_creator**: None/function, the function creates population samples. By default -- random uniform for real variables and random uniform for int. [Example](#optimization-with-oppositions)
 * param **init_oppositors**: `None/function` list, the list of oppositors creates oppositions for base population. No by default. [Example](#optimization-with-oppositions)
@@ -210,13 +265,13 @@ Your best solution is computed!
 * param **remove_duplicates_generation_step**: `None/int`, step for removing duplicates (have a sense with discrete tasks). No by default. [Example](#duplicates-removing)
 * param **revolution_oppositor** =` None/function`, oppositor for revolution time. No by default. [Example](#revolutions)
 * param **revolution_after_stagnation_step** = `None/int`, create revolution after this generations of stagnation. No by default. [Example](#revolutions)
-* param **revolution_part**: `float`, the part of generation to being oppose. By default is 0.3. [Example](#revolutions)
+* param **revolution_part** (**): the part of generation to being oppose. By default is 0.3. [Example](#revolutions)
 
 * param **population_initializer** (`tuple(int, func)`) - object for actions at population initialization step to create better start population. [Take a look](#creating-better-start-population)
 
-* param **stop_when_reached** (`None`/`float`) - stop searching after reaching this value (it can be potential minimum or something else)
+* param **stop_when_reached** (*Optional[float]*) - stop searching after reaching this value (it can be potential minimum or something else)
 
-* param **callbacks** (`list`) - list of callback functions with structure:
+* param **callbacks** (*Sequence*) - list of callback functions with structure:
   ```python 
   def callback(generation_number, report_list, last_population_as_2D_array, last_population_scores_as_1D_array):
       #
@@ -227,10 +282,10 @@ Your best solution is computed!
     * `Callbacks.SavePopulation(folder, save_gen_step = 50, file_prefix = 'population')`
     * `Callbacks.PlotOptimizationProcess(folder, save_gen_step = 50, show = False, main_color = 'green', file_prefix = 'report')`
 
-* param **middle_callbacks** (`list`) - list of functions made `MiddleCallbacks` class (please, have a look at [this](#middle-callbacks)) 
+* param **middle_callbacks** (*Sequence*) - list of functions made `MiddleCallbacks` class (please, have a look at [this](#middle-callbacks)) 
 
 
-* param **time_limit_secs** (`None`/ number>0) - limit time of working (in seconds). If `None`, there is no time limit (limit only for count of generation and so on). See [little example of using](tests/time_limit.py). Also there is simple conversion function for conversion some time in seconds:
+* param **time_limit_secs** (*Optional[float]*) - limit time of working (in seconds). If `None`, there is no time limit (limit only for count of generation and so on). See [little example of using](tests/time_limit.py). Also there is simple conversion function for conversion some time in seconds:
   ```python
   from truefalsepython import time_to_seconds
 
@@ -242,13 +297,12 @@ Your best solution is computed!
   )
   ```
 
-* param **save_last_generation_as** (`str`) - path to `.npz` file for saving last_generation as numpy dictionary like `{'population': 2D-array, 'scores': 1D-array}`, `None` if doesn't need to save in file; [take a look](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)
+* param **save_last_generation_as** (*Optional[str]*) - path to `.npz` file for saving last_generation as numpy dictionary like `{'population': 2D-array, 'scores': 1D-array}`, `None` if doesn't need to save in file; [take a look](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)
 
-* param **seed** - random seed (None is doesn't matter)
+* param **seed** (*Optional[int]*) - random seed (None is doesn't matter)
 
 It would be more logical to use params like `studEA` as an algorithm param, but `run()`-way can be more comfortable for real using.
 
-**param**: a dictionary of real parameters of the genetic algorithm (GA)
     
 **output**:  
   
@@ -257,12 +311,15 @@ It would be more logical to use params like `studEA` as an algorithm param, but 
 output_dict = {
             'variable': best_variable, // as 1D-array
             'function': best_function_value, // a number
-            'last_generation': {
-                // values are sorted by scores
-                'variables':last_generation_variables, // 2D-array samples*dim
-                'scores': last_generation_function_values // 1D-array of scores
-                }
-            }
+            'last_generation': Generation object
+}
+
+// Generation object is equal to dictionary:
+// {
+//     // values are sorted by scores
+//     'variables':last_generation_variables, // 2D-array samples*dim
+//     'scores': last_generation_function_values // 1D-array of scores
+// }
 ```
 
 * `report`: is a record of the progress of the algorithm over iterations. There are also `report_average` and `report_min` fields which are the average and min generation values by each generation
@@ -270,50 +327,62 @@ output_dict = {
 
 ## Constructor parameters
 
-* param **function** <Callable> - the given objective function to be minimized  
+* param **function** (*Callable[[np.ndarray], float]*) - the given objective function to be minimized  
 NOTE: This implementation minimizes the given objective function. (For maximization multiply function by a negative sign: the absolute value of the output would be the actual objective function)
         
-* param **dimension** <integer> - the number of decision variables
+* param **dimension** (*int*) - the number of decision variables
         
-* param **variable_type** <string> - 'bool' if all variables are Boolean; 'int' if all variables are integer; and 'real' if all variables are real value or continuous (for mixed type see *@param variable_type_mixed*). 
+* param **variable_type** (*str*) - 'bool' if all variables are Boolean; 'int' if all variables are integer; and 'real' if all variables are real value or continuous (for mixed type see *@param variable_type_mixed*). 
         
-* param **variable_boundaries** <numpy array/None> - Default None; leave it None if variable_type is 'bool'; otherwise provide an array of tuples of length two as 
-boundaries for each variable; the length of the array must be equal dimension. 
+* param **variable_boundaries** (*Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]]*) - Default None; leave it None if variable_type is 'bool'; otherwise provide an sequence of tuples of length two as boundaries for each variable; the length of the array must be equal dimension. 
 For example, np.array(\[0,100\],\[0,200\]) determines lower boundary 0 and upper boundary 100 
 for first and upper boundary 200 for second variable where dimension is 2.
         
-* param **variable_type_mixed** <numpy array/None> - Default None; leave it None if all variables have the same type; otherwise this can be used to specify the type of each variable separately. For example if the first 
+* param **variable_type_mixed** (*Optional[Sequence[str]]*) - Default None; leave it None if all variables have the same type; otherwise this can be used to specify the type of each variable separately. For example if the first 
 variable is integer but the second one is real the input is: 
-np.array(\['int'\],\['real'\]). NOTE: it does not accept 'bool'. If variable
+`['int', 'real']`. NOTE: it does not accept 'bool'. If variable
 type is Boolean use 'int' and provide a boundary as \[0,1\] 
 in variable_boundaries. Also if variable_type_mixed is applied, 
 variable_boundaries has to be defined.
         
-* param **function_timeout** <float> - if the given function does not provide 
+* param **function_timeout** (*float*) - if the given function does not provide 
 output before function_timeout (unit is seconds) the algorithm raise error.
 For example, when there is an infinite loop in the given function. 
         
-* param **algorithm_parameters**. Dictionary with keys:  
+* param **algorithm_parameters** (*Union[AlgorithmParams, Dict[str, Any]]*). Dictionary or AlgorithmParams object with fields:  
     * @ **max_num_iteration** (int/None) - stoping criteria of the genetic algorithm (GA)  
     * @ **population_size** (int > 0)   
     * @ **mutation_probability** (float in \[0,1\])  
     * @ **elit_ration** (float in \[0,1\]) - part of elit objects in population; if > 0, there always will be 1 elit object at least  
     * @ **crossover_probability** (float in \[0,1\]) 
     * @ **parents_portion** (float in \[0,1\]) - part of parents from previous population to save in next population (including `elit_ration`)  
-    * @ **crossover_type** (string/function) - Default is `uniform`.
-are other options
-    * @ **mutation_type** (string/function) - Default is `uniform_by_center`
-    * @ **selection_type** (string/function) - Default is `roulette`
-    * @ **max_iteration_without_improv** (int/None) - maximum number of 
-successive iterations without improvement. If `None` it is ineffective
+    * @ **crossover_type** (*Union[str, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]]*) - Default is `uniform`.
+    * @ **mutation_type** (*Union[str, Callable[[float, float, float], float]]*) - Default is `uniform_by_center`
+    * @ **selection_type** (*Union[str, Callable[[np.ndarray, int], np.ndarray]]*) - Default is `roulette`
+    * @ **max_iteration_without_improv** (int/None) - maximum number of successive iterations without improvement. If `None` it is ineffective
 
 
 ## Genetic algorithm's parameters
 
-The parameters of GA is defined as a dictionary:
+The parameters of GA is defined as a dictionary or `AlgorithmParams` object:
 
 ```python
 
+AlgorithmParams(
+                max_num_iteration = None,
+                population_size = 100,
+                mutation_probability = 0.1,
+                elit_ratio = 0.01,
+                crossover_probability = 0.5,
+                parents_portion = 0.3,
+                crossover_type = 'uniform',
+                mutation_type = 'uniform_by_center',
+                selection_type = 'roulette',
+                max_iteration_without_improv = None
+            )
+
+
+# old style with dictionary
 algorithm_param = {
                    'max_num_iteration': None,
                    'population_size':100,
@@ -331,7 +400,7 @@ algorithm_param = {
 The above dictionary refers to the default values that has been set already. 
 One may simply copy this code from here and change the values and use the modified dictionary as the argument of `geneticalgorithm2`. 
 
-Another way of accessing this dictionary is using the command below:
+Another way of accessing this params object is using the command below:
 
 ```python
 import numpy as np
@@ -356,7 +425,7 @@ def f(X):
     return np.sum(X)
     
     
-varbound=np.array([[0,10]]*3)
+varbound=[(0,10)]*3
 
 algorithm_param = {'max_num_iteration': 3000,
                    'population_size':100,
@@ -396,8 +465,9 @@ algorithm_param = {'max_num_iteration': 150,
                    'max_iteration_without_improv':None}
 ```
 
+But it is better to use `AlgorithmParams` object instead of dictionaries.
 
-**Parameters in dictionary**:
+**Parameters of algorithm**:
 
 * **max_num_iteration**: The termination criterion of GA. 
 If this parameter's value is `None` the algorithm sets maximum number of iterations automatically as a function of the dimension, boundaries, and population size. The user may enter any number of iterations that they want. It is highly recommended that the user themselves determines the **max_num_iterations** and not to use `None`. Notice that **max_num_iteration** has been changed to 3000 (it was already `None`). 

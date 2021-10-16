@@ -149,7 +149,7 @@ class geneticalgorithm2:
         # input algorithm's parameters
 
         assert type(algorithm_parameters) in (dict, AlgorithmParams), "algorithm_parameters must be dict or AlgorithmParams object"
-        if type(type(algorithm_parameters) != AlgorithmParams):
+        if type(algorithm_parameters) != AlgorithmParams:
             algorithm_parameters = AlgorithmParams.from_dict(algorithm_parameters)
 
         algorithm_parameters._check_if_valid()
@@ -265,7 +265,7 @@ class geneticalgorithm2:
                     iterate += (self.var_bound[i][1] - self.var_bound[i][0]) * self.dim * (100 / self.pop_s)
                 else:
                     iterate += (self.var_bound[i][1] - self.var_bound[i][0]) * 50 * (100 / self.pop_s)
-            iterate = int(self.iterate)
+            iterate = int(iterate)
             if (iterate * self.pop_s) > 10000000:
                 iterate = 10000000 / self.pop_s
 
@@ -635,7 +635,7 @@ class geneticalgorithm2:
                 
         else:
 
-            self.pop_s = start_generation.size
+            self.pop_s = start_generation.variables.shape[0]
             self.__set_elit(self.pop_s, self.param.elit_ratio)
             self.__set_par_s(self.param.parents_portion)
 
@@ -849,7 +849,7 @@ class geneticalgorithm2:
         plt.title(title)
         plt.legend()
         
-        if not (save_as is None):
+        if save_as is not None:
             plt.savefig(save_as, dpi = 200)
 
         plt.show()
