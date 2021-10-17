@@ -338,7 +338,7 @@ class geneticalgorithm2:
             population_initializer = Population_initializer(select_best_of = 1, local_optimization_step = 'never', local_optimizer = None),  #+
             
             stop_when_reached: Optional[float] = None,
-            callbacks: Sequence = [], #+
+            callbacks: Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]] = [], #+
             middle_callbacks: Sequence = [], #+
             time_limit_secs: Optional[float] = None,
             save_last_generation_as: Optional[str] = None,
@@ -372,7 +372,7 @@ class geneticalgorithm2:
 
         @param stop_when_reached (None/float) - stop searching after reaching this value (it can be potential minimum or something else)
 
-        @param callbacks (list) - list of callback functions with structure: (generation_number, report_list, last_population, last_scores) -> do some action
+        @param callbacks (Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]]) - list of callback functions with structure: (generation_number, report_list, last_population, last_scores) -> do some action
 
         @param middle_callbacks (list) - list of functions made MiddleCallbacks class 
 
@@ -965,7 +965,7 @@ class geneticalgorithm2:
 #
 ###############################################################################
     @staticmethod
-    def default_set_function(function_for_set):
+    def default_set_function(function_for_set: Callable[[np.ndarray], float]):
         """
         simple function for creating set_function 
         function_for_set just applyes to each row of population
@@ -974,7 +974,7 @@ class geneticalgorithm2:
             return np.array([function_for_set(matrix[i,:]) for i in range(matrix.shape[0])])
         return func
     @staticmethod
-    def set_function_multiprocess(function_for_set, n_jobs = -1):
+    def set_function_multiprocess(function_for_set: Callable[[np.ndarray], float], n_jobs: int = -1):
         """
         like function_for_set but uses joblib with n_jobs (-1 goes to count of available processors)
         """
