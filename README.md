@@ -244,34 +244,34 @@ Your best solution is computed!
 
 **run()**: implements the genetic algorithm (GA) with parameters:
 
-* param **no_plot** (*bool*) - do not plot results using matplotlib by default
+* param **no_plot** (`bool`) - do not plot results using matplotlib by default
 
-* param **disable_progress_bar** (*bool*) - do not show progress bar (also it can be faster by 10-20 seconds)
+* param **disable_progress_bar** (`bool`) - do not show progress bar (also it can be faster by 10-20 seconds)
 
-* param **disable_printing** (*bool*) - don't print any text (except progress bar)
+* param **disable_printing** (`bool`) - don't print any text (except progress bar)
 
-* param **set_function** (*Optional[Callable[[np.ndarray], np.ndarray]]*): 2D-array -> 1D-array function, which applies to matrix of population (size (samples, dimension)) to estimate their values
+* param **set_function** (`Optional[Callable[[np.ndarray], np.ndarray]]`): 2D-array -> 1D-array function, which applies to matrix of population (size (samples, dimension)) to estimate their values
         
-* param **apply_function_to_parents** (*bool*) - apply function to parents from previous generation (if it's needed, it can be needed at working with games agents)
+* param **apply_function_to_parents** (`bool`) - apply function to parents from previous generation (if it's needed, it can be needed at working with games agents)
 
-* param **start_generation** (*Union[str, Dict[str, np.ndarray], Generation]*) - `Generation` object or a dictionary with structure `{'variables':2D-array of samples, 'scores': function values on samples}` or path to `.npz` file (`str`) with saved generation (see [example](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)). If `'scores'` value is `None` the scores will be compute. [See this](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)  
+* param **start_generation** (`Union[str, Dict[str, np.ndarray], Generation]`) - `Generation` object or a dictionary with structure `{'variables':2D-array of samples, 'scores': function values on samples}` or path to `.npz` file (`str`) with saved generation (see [example](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)). If `'scores'` value is `None` the scores will be compute. [See this](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)  
 
-* param **studEA** (*bool*) - using stud EA strategy (crossover with best object always). Default is false. [Take a look](#standard-crossover-vs-stud-ea-crossover)
-* param **mutation_indexes** (*Optional[Union[Sequence[int], Set[int]]]*) - indexes of dimensions where mutation can be performed (all dimensions by default). [Example](tests/mut_indexes.py)
+* param **studEA** (`bool`) - using stud EA strategy (crossover with best object always). Default is false. [Take a look](#standard-crossover-vs-stud-ea-crossover)
+* param **mutation_indexes** (`Optional[Union[Sequence[int], Set[int]]]`) - indexes of dimensions where mutation can be performed (all dimensions by default). [Example](tests/mut_indexes.py)
 
-* param **init_creator**: None/function, the function creates population samples. By default -- random uniform for real variables and random uniform for int. [Example](#optimization-with-oppositions)
-* param **init_oppositors**: `None/function` list, the list of oppositors creates oppositions for base population. No by default. [Example](#optimization-with-oppositions)
-* param **duplicates_oppositor**: `None/function`, oppositor for applying after duplicates removing. By default -- using just random initializer from creator. [Example](#duplicates-removing)
+* param **init_creator**: (`Optional[Callable[[], np.ndarray]]`), the function creates population samples. By default -- random uniform for real variables and random uniform for int. [Example](#optimization-with-oppositions)
+* param **init_oppositors**: (`Optional[Sequence[Callable[[np.ndarray], np.ndarray]]]`) list, the list of oppositors creates oppositions for base population. No by default. [Example](#optimization-with-oppositions)
+* param **duplicates_oppositor**: `Optional[Callable[[np.ndarray], np.ndarray]]`, oppositor for applying after duplicates removing. By default -- using just random initializer from creator. [Example](#duplicates-removing)
 * param **remove_duplicates_generation_step**: `None/int`, step for removing duplicates (have a sense with discrete tasks). No by default. [Example](#duplicates-removing)
-* param **revolution_oppositor** =` None/function`, oppositor for revolution time. No by default. [Example](#revolutions)
+* param **revolution_oppositor** = `Optional[Callable[[np.ndarray], np.ndarray]]`, oppositor for revolution time. No by default. [Example](#revolutions)
 * param **revolution_after_stagnation_step** = `None/int`, create revolution after this generations of stagnation. No by default. [Example](#revolutions)
-* param **revolution_part** (**): the part of generation to being oppose. By default is 0.3. [Example](#revolutions)
+* param **revolution_part** (`float`): the part of generation to being oppose. By default is 0.3. [Example](#revolutions)
 
-* param **population_initializer** (`tuple(int, func)`) - object for actions at population initialization step to create better start population. [Take a look](#creating-better-start-population)
+* param **population_initializer** (`Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]]`) - object for actions at population initialization step to create better start population. [Take a look](#creating-better-start-population)
 
-* param **stop_when_reached** (*Optional[float]*) - stop searching after reaching this value (it can be potential minimum or something else)
+* param **stop_when_reached** (`Optional[float]`) - stop searching after reaching this value (it can be potential minimum or something else)
 
-* param **callbacks** (*Sequence*) - list of callback functions with structure:
+* param **callbacks** (`Optional[Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]]]`) - list of callback functions with structure:
   ```python 
   def callback(generation_number, report_list, last_population_as_2D_array, last_population_scores_as_1D_array):
       #
@@ -282,10 +282,10 @@ Your best solution is computed!
     * `Callbacks.SavePopulation(folder, save_gen_step = 50, file_prefix = 'population')`
     * `Callbacks.PlotOptimizationProcess(folder, save_gen_step = 50, show = False, main_color = 'green', file_prefix = 'report')`
 
-* param **middle_callbacks** (*Sequence*) - list of functions made `MiddleCallbacks` class (please, have a look at [this](#middle-callbacks)) 
+* param **middle_callbacks** (`Sequence`) - list of functions made `MiddleCallbacks` class (please, have a look at [this](#middle-callbacks)) 
 
 
-* param **time_limit_secs** (*Optional[float]*) - limit time of working (in seconds). If `None`, there is no time limit (limit only for count of generation and so on). See [little example of using](tests/time_limit.py). Also there is simple conversion function for conversion some time in seconds:
+* param **time_limit_secs** (`Optional[float]`) - limit time of working (in seconds). If `None`, there is no time limit (limit only for count of generation and so on). See [little example of using](tests/time_limit.py). Also there is simple conversion function for conversion some time in seconds:
   ```python
   from truefalsepython import time_to_seconds
 
@@ -297,9 +297,9 @@ Your best solution is computed!
   )
   ```
 
-* param **save_last_generation_as** (*Optional[str]*) - path to `.npz` file for saving last_generation as numpy dictionary like `{'population': 2D-array, 'scores': 1D-array}`, `None` if doesn't need to save in file; [take a look](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)
+* param **save_last_generation_as** (`Optional[str]`) - path to `.npz` file for saving last_generation as numpy dictionary like `{'population': 2D-array, 'scores': 1D-array}`, `None` if doesn't need to save in file; [take a look](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)
 
-* param **seed** (*Optional[int]*) - random seed (None is doesn't matter)
+* param **seed** (`Optional[int]`) - random seed (None is doesn't matter)
 
 It would be more logical to use params like `studEA` as an algorithm param, but `run()`-way can be more comfortable for real using.
 
@@ -327,39 +327,39 @@ output_dict = {
 
 ## Constructor parameters
 
-* param **function** (*Callable[[np.ndarray], float]*) - the given objective function to be minimized  
+* param **function** (`Callable[[np.ndarray], float]`) - the given objective function to be minimized  
 NOTE: This implementation minimizes the given objective function. (For maximization multiply function by a negative sign: the absolute value of the output would be the actual objective function)
         
-* param **dimension** (*int*) - the number of decision variables
+* param **dimension** (`int`) - the number of decision variables
         
-* param **variable_type** (*str*) - 'bool' if all variables are Boolean; 'int' if all variables are integer; and 'real' if all variables are real value or continuous (for mixed type see *@param variable_type_mixed*). 
+* param **variable_type** (`str`) - 'bool' if all variables are Boolean; 'int' if all variables are integer; and 'real' if all variables are real value or continuous (for mixed type see *@param variable_type_mixed*). 
         
-* param **variable_boundaries** (*Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]]*) - Default None; leave it None if variable_type is 'bool'; otherwise provide an sequence of tuples of length two as boundaries for each variable; the length of the array must be equal dimension. 
+* param **variable_boundaries** (`Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]]`) - Default None; leave it None if variable_type is 'bool'; otherwise provide an sequence of tuples of length two as boundaries for each variable; the length of the array must be equal dimension. 
 For example, np.array(\[0,100\],\[0,200\]) determines lower boundary 0 and upper boundary 100 
 for first and upper boundary 200 for second variable where dimension is 2.
         
-* param **variable_type_mixed** (*Optional[Sequence[str]]*) - Default None; leave it None if all variables have the same type; otherwise this can be used to specify the type of each variable separately. For example if the first 
+* param **variable_type_mixed** (`Optional[Sequence[str]]`) - Default None; leave it None if all variables have the same type; otherwise this can be used to specify the type of each variable separately. For example if the first 
 variable is integer but the second one is real the input is: 
 `['int', 'real']`. NOTE: it does not accept 'bool'. If variable
 type is Boolean use 'int' and provide a boundary as \[0,1\] 
 in variable_boundaries. Also if variable_type_mixed is applied, 
 variable_boundaries has to be defined.
         
-* param **function_timeout** (*float*) - if the given function does not provide 
+* param **function_timeout** (`float`) - if the given function does not provide 
 output before function_timeout (unit is seconds) the algorithm raise error.
 For example, when there is an infinite loop in the given function. 
         
-* param **algorithm_parameters** (*Union[AlgorithmParams, Dict[str, Any]]*). Dictionary or AlgorithmParams object with fields:  
-    * @ **max_num_iteration** (int/None) - stoping criteria of the genetic algorithm (GA)  
-    * @ **population_size** (int > 0)   
-    * @ **mutation_probability** (float in \[0,1\])  
-    * @ **elit_ration** (float in \[0,1\]) - part of elit objects in population; if > 0, there always will be 1 elit object at least  
-    * @ **crossover_probability** (float in \[0,1\]) 
-    * @ **parents_portion** (float in \[0,1\]) - part of parents from previous population to save in next population (including `elit_ration`)  
-    * @ **crossover_type** (*Union[str, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]]*) - Default is `uniform`.
-    * @ **mutation_type** (*Union[str, Callable[[float, float, float], float]]*) - Default is `uniform_by_center`
-    * @ **selection_type** (*Union[str, Callable[[np.ndarray, int], np.ndarray]]*) - Default is `roulette`
-    * @ **max_iteration_without_improv** (int/None) - maximum number of successive iterations without improvement. If `None` it is ineffective
+* param **algorithm_parameters** (`Union[AlgorithmParams, Dict[str, Any]]`). Dictionary or AlgorithmParams object with fields:  
+    * @ **max_num_iteration** (`int/None`) - stoping criteria of the genetic algorithm (GA)  
+    * @ **population_size** (`int > 0`)   
+    * @ **mutation_probability** (`float in [0,1]`)
+    * @ **elit_ration** (`float in [0,1]`) - part of elit objects in population; if > 0, there always will be 1 elit object at least  
+    * @ **crossover_probability** (`float in [0,1]`) 
+    * @ **parents_portion** (`float in [0,1]`) - part of parents from previous population to save in next population (including `elit_ration`)  
+    * @ **crossover_type** (`Union[str, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]]`) - Default is `uniform`.
+    * @ **mutation_type** (`Union[str, Callable[[float, float, float], float]]`) - Default is `uniform_by_center`
+    * @ **selection_type** (`Union[str, Callable[[np.ndarray, int], np.ndarray]]`) - Default is `roulette`
+    * @ **max_iteration_without_improv** (`int/None`) - maximum number of successive iterations without improvement. If `None` it is ineffective
 
 
 ## Genetic algorithm's parameters

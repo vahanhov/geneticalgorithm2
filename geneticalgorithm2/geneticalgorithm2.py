@@ -325,21 +325,21 @@ class geneticalgorithm2:
             studEA: bool = False,
             mutation_indexes: Optional[Union[Sequence[int], Set[int]]] = None,
 
-            init_creator = None,#+
-            init_oppositors = None,#+
+            init_creator: Optional[Callable[[], np.ndarray]] = None,#+
+            init_oppositors: Optional[Sequence[Callable[[np.ndarray], np.ndarray]]] = None,
 
-            duplicates_oppositor = None,#+
-            remove_duplicates_generation_step = None,#+
+            duplicates_oppositor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+            remove_duplicates_generation_step: Optional[int] = None,
 
-            revolution_oppositor = None,#+
-            revolution_after_stagnation_step = None,#+
+            revolution_oppositor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+            revolution_after_stagnation_step: Optional[int] = None,
             revolution_part: float = 0.3,
             
-            population_initializer = Population_initializer(select_best_of = 1, local_optimization_step = 'never', local_optimizer = None),  #+
+            population_initializer: Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]] = Population_initializer(select_best_of = 1, local_optimization_step = 'never', local_optimizer = None),  #+
             
             stop_when_reached: Optional[float] = None,
-            callbacks: Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]] = [], #+
-            middle_callbacks: Sequence = [], #+
+            callbacks: Optional[Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]]] = None,
+            middle_callbacks: Optional[Sequence] = None, #+
             time_limit_secs: Optional[float] = None,
             save_last_generation_as: Optional[str] = None,
             seed: Optional[int] = None):
@@ -360,21 +360,21 @@ class geneticalgorithm2:
         
         @param mutation_indexes <Optional[Union[Sequence[int], Set[int]]]> - indexes of dimensions where mutation can be performed (all dimensions by default)
 
-        @param init_creator: None/function, the function creates population samples. By default -- random uniform for real variables and random uniform for int
-        @param init_oppositors: None/function list, the list of oppositors creates oppositions for base population. No by default
-        @param duplicates_oppositor: None/function, oppositor for applying after duplicates removing. By default -- using just random initializer from creator
+        @param init_creator: Optional[Callable[[], np.ndarray]], the function creates population samples. By default -- random uniform for real variables and random uniform for int
+        @param init_oppositors: Optional[Sequence[Callable[[np.ndarray], np.ndarray]]]t, the list of oppositors creates oppositions for base population. No by default
+        @param duplicates_oppositor: Optional[Callable[[np.ndarray], np.ndarray]], oppositor for applying after duplicates removing. By default -- using just random initializer from creator
         @param remove_duplicates_generation_step: None/int, step for removing duplicates (have a sense with discrete tasks). No by default
-        @param revolution_oppositor = None/function, oppositor for revolution time. No by default
+        @param revolution_oppositor = Optional[Callable[[np.ndarray], np.ndarray]], oppositor for revolution time. No by default
         @param revolution_after_stagnation_step = None/int, create revolution after this generations of stagnation. No by default
         @param revolution_part: float, the part of generation to being oppose. By default is 0.3
 
-        @param population_initializer (tuple(int, func)) - object for actions at population initialization step to create better start population. See doc
+        @param population_initializer (Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]]) - object for actions at population initialization step to create better start population. See doc
 
         @param stop_when_reached (None/float) - stop searching after reaching this value (it can be potential minimum or something else)
 
-        @param callbacks (Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]]) - list of callback functions with structure: (generation_number, report_list, last_population, last_scores) -> do some action
+        @param callbacks (Optional[Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]]]) - sequence of callback functions with structure: (generation_number, report_list, last_population, last_scores) -> do some action
 
-        @param middle_callbacks (list) - list of functions made MiddleCallbacks class 
+        @param middle_callbacks (Optional[Sequence]) - sequence of functions made MiddleCallbacks class
 
         @param time_limit_secs (Optional[float] / number>0) - limit time of working (in seconds)
 
@@ -470,26 +470,27 @@ class geneticalgorithm2:
 
 
 
-        def total_callback(generation_number, report_list, last_population, last_scores):
-            for cb in callbacks:
-                cb(generation_number, report_list, last_population, last_scores)
-
-        def total_middle_callback():
-            """
-            applies callbacks and sets new data if there is a sence
-            """
-            data = get_data()
-            flag = False
-            for cb in middle_callbacks:
-                data, has_sense = cb(data)
-                if has_sense: flag = True
-            if flag:
-                set_data(data) # update global date if there was real callback step
-
-        if len(callbacks) == 0:
+        if callbacks is None or len(callbacks) == 0:
             total_callback = lambda g, r, lp, ls: None
-        if len(middle_callbacks) == 0:
+        else:
+            def total_callback(generation_number, report_list, last_population, last_scores):
+                for cb in callbacks:
+                    cb(generation_number, report_list, last_population, last_scores)
+
+        if middle_callbacks is None or len(middle_callbacks) == 0:
             total_middle_callback = lambda : None
+        else:
+            def total_middle_callback():
+                """
+                applies callbacks and sets new data if there is a sence
+                """
+                data = get_data()
+                flag = False
+                for cb in middle_callbacks:
+                    data, has_sense = cb(data)
+                    if has_sense: flag = True
+                if flag:
+                    set_data(data)  # update global date if there was real callback step
 
 
 
