@@ -4,6 +4,10 @@ from typing import Callable, Optional, Tuple
 import numpy as np
 
 
+
+_local_opt_valid_steps = ('before_select', 'after_select', 'never')
+
+
 def Population_initializer(select_best_of: int = 4,
                            local_optimization_step: str = 'never',
                            local_optimizer: Optional[Callable[[np.ndarray, float], Tuple[np.ndarray, float]]] = None):
@@ -25,21 +29,19 @@ def Population_initializer(select_best_of: int = 4,
     
     assert (select_best_of > 0 and type(select_best_of) == int), "select_best_of argument should be integer and more than 0"
 
-    steps = ('before_select', 'after_select', 'never')
+    assert (local_optimization_step in _local_opt_valid_steps), f"local_optimization_step should be in {_local_opt_valid_steps}, but got {local_optimization_step}"
 
-    assert (local_optimization_step in steps), f"local_optimization_step should be in {steps}"
-
-    if local_optimizer is None and local_optimization_step in steps[:2]:
-        raise Exception(f"for local_optimization_step from {steps[:2]} local_optimizer function mustn't be None")
+    if local_optimizer is None and local_optimization_step in _local_opt_valid_steps[:2]:
+        raise Exception(f"for local_optimization_step from {_local_opt_valid_steps[:2]} local_optimizer function mustn't be None")
 
 
 
-    def Select_best(population, scores):
+    def Select_best(population: np.ndarray, scores: np.ndarray):
         args = np.argsort(scores)
         args = args[:round(args.size/select_best_of)]
         return population[args, :], scores[args]
 
-    def Local_opt(population, scores):
+    def Local_opt(population: np.ndarray, scores: np.ndarray):
         pairs = [local_optimizer(population[i, :], scores[i]) for i in range(scores.size)]
 
         return np.array([p[0] for p in pairs]), np.array([p[1] for p in pairs])
@@ -55,7 +57,7 @@ def Population_initializer(select_best_of: int = 4,
     #        return pop, scores
 
 
-    def Result(population, scores):
+    def Result(population: np.ndarray, scores: np.ndarray):
         if local_optimization_step == 'before_select':
             pop, s = Local_opt(population, scores)
             return Select_best(pop, s)
@@ -64,10 +66,8 @@ def Population_initializer(select_best_of: int = 4,
             pop, s = Select_best(population, scores)
             return Local_opt(pop, s)
 
-        if local_optimization_step == 'never':
-            return Select_best(population, scores)
-
-        raise Exception(f'unnoun local_optimization_step ({local_optimization_step})')
+        #if local_optimization_step == 'never':
+        return Select_best(population, scores)
     
 
     return select_best_of, Result
