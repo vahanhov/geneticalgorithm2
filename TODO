@@ -1,10 +1,5 @@
 
 
-# easy
-
-for start_generation add valid forms: np.ndarray with shape (samples, dim) or (samples, dim + 1)  and tuple(array, array)
-
-
 
 
 
