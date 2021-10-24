@@ -321,7 +321,7 @@ class geneticalgorithm2:
 
             set_function: Optional[Callable[[np.ndarray], np.ndarray]] = None,
             apply_function_to_parents: bool = False,
-            start_generation: Union[str, Dict[str, np.ndarray], Generation] = Generation(),
+            start_generation: Union[str, Dict[str, np.ndarray], Generation, np.ndarray, Tuple[Optional[np.ndarray], Optional[np.ndarray]]] = Generation(),
             studEA: bool = False,
             mutation_indexes: Optional[Union[Sequence[int], Set[int]]] = None,
 
@@ -391,8 +391,8 @@ class geneticalgorithm2:
         assert current_gen_number(remove_duplicates_generation_step), "must be None or int and >0"
         assert can_be_prob(revolution_part), f"revolution_part must be in [0,1], not {revolution_part}"
         assert (stop_when_reached is None or type(stop_when_reached) in (int, float))
-        assert (isinstance(callbacks, collections.Sequence)), "callbacks should be list of callbacks functions"
-        assert (isinstance(middle_callbacks, collections.Sequence)), "middle_callbacks should be list of MiddleCallbacks functions"
+        assert (isinstance(callbacks, collections.Sequence) or callbacks is None), "callbacks should be list of callbacks functions"
+        assert (isinstance(middle_callbacks, collections.Sequence) or middle_callbacks is None), "middle_callbacks should be list of MiddleCallbacks functions"
         assert (time_limit_secs is None or time_limit_secs > 0), 'time_limit_secs must be None of number > 0'
 
 

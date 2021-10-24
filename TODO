@@ -1,5 +1,8 @@
 
 
+
+
+
 # will break backward compatibility
 
 replace data for middle callbacks with a good class
@@ -9,13 +12,6 @@ union variable_type and variable_type_mixed to one argument
 move dups and revolutions to middle callbacks
 
 move function_timeout  to run ?  and function ????
-
-
-
-
-
-
-
 
 
 

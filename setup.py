@@ -28,11 +28,11 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="geneticalgorithm2", 
-    version="6.3.0",
+    version="6.4.0",
     author="Demetry Pascal",
     author_email="qtckpuhdsa@gmail.com",
     maintainer=['Demetry Pascal'],
-    description="Flexible implementation of genetic-algorithm (GA) to solve continuous and combinatorial optimization problems (supported fork of geneticalgorithm package)",
+    description="Supported highly optimized and flexible genetic algorithm package for python",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/PasaOpasen/geneticalgorithm2",
