@@ -13,6 +13,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 - [About](#about)
 - [Installation](#installation)
 - [Updates information](#updates-information)
+  - [6.4.0 minor update (refactoring)](#640-minor-update-refactoring)
   - [6.3.0 minor update (refactoring)](#630-minor-update-refactoring)
 - [Working process](#working-process)
   - [Methods and Properties of model:](#methods-and-properties-of-model)
@@ -83,11 +84,24 @@ It provides an easy optimized implementation of genetic-algorithm (GA) in Python
 
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install geneticalgorithm2 in Python.
 
-```python
+```
 pip install geneticalgorithm2
 ```
 
 # Updates information
+
+## 6.4.0 minor update (refactoring)
+
+- new valid forms for `start_generation`; now it's valid to use
+    * `None`
+    * `str` path to saved generation
+    * dictionary with structure `{'variables': variables/None, 'scores': scores/None}`
+    * `Generation` object: `Generation(variables = variables, scores = scores)`
+    * `np.ndarray` with shape `(samples, dim)` for only population or `(samples, dim+1)` for concatenated population and score (scores is the last matrix column)
+    * `tuple(np.ndarray/None, np.ndarray/None)` for variables and scores
+  
+  here `variables` in 2D numpy array with shape `(samples, dim)`, `scores` is 1D numpy array with scores (function values) for each sample; [here](tests/start_gen.py) and [here](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run) u can see examples of using these valid forms 
+
 
 ## 6.3.0 minor update (refactoring)
 
@@ -254,7 +268,7 @@ Your best solution is computed!
         
 * param **apply_function_to_parents** (`bool`) - apply function to parents from previous generation (if it's needed, it can be needed at working with games agents)
 
-* param **start_generation** (`Union[str, Dict[str, np.ndarray], Generation]`) - `Generation` object or a dictionary with structure `{'variables':2D-array of samples, 'scores': function values on samples}` or path to `.npz` file (`str`) with saved generation (see [example](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)). If `'scores'` value is `None` the scores will be compute. [See this](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)  
+* param **start_generation** (`Union[str, Dict[str, np.ndarray], Generation, np.ndarray, Tuple[Optional[np.ndarray], Optional[np.ndarray]]]`) - `Generation` object or a dictionary with structure `{'variables':2D-array of samples, 'scores': function values on samples}` or path to `.npz` file (`str`) with saved generation (see [example](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)) or `np.ndarray` (with shape `(samples, dim)` or `(samples, dim+1)`) or tuple of `np.ndarray`s/`None`. If `'scores'` value is `None` the scores will be compute. [See this](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)  
 
 * param **studEA** (`bool`) - using stud EA strategy (crossover with best object always). Default is false. [Take a look](#standard-crossover-vs-stud-ea-crossover)
 * param **mutation_indexes** (`Optional[Union[Sequence[int], Set[int]]]`) - indexes of dimensions where mutation can be performed (all dimensions by default). [Example](tests/mut_indexes.py)
@@ -1326,7 +1340,7 @@ def f(X):
     
 dim = 6
     
-varbound = np.array([[0,10]]*dim)
+varbound = [(0,10)]*dim
 
 
 algorithm_param = {'max_num_iteration': 500,
@@ -1336,8 +1350,6 @@ algorithm_param = {'max_num_iteration': 500,
                    'crossover_probability': 0.5,
                    'parents_portion': 0.3,
                    'crossover_type':'uniform',
-                   'mutation_type': 'uniform_by_center',
-                   'selection_type': 'roulette',
                    'max_iteration_without_improv':None}
 
 model = ga(function=f, 
@@ -1352,9 +1364,26 @@ samples = np.random.uniform(0, 50, (300, dim)) # 300 is the new size of your gen
 
 
 
-model.run(no_plot = True, start_generation={'variables':samples, 'scores': None}) 
+model.run(no_plot = False, start_generation={'variables':samples, 'scores': None}) 
 # it's not necessary to evaluate scores before
 # but u can do it if u have evaluated scores and don't wanna repeat calcucations
+
+
+
+# from version 6.3.0 it's recommended to use this form
+from geneticalgorithm2 import Generation
+model.run(no_plot = False, start_generation=Generation(variables = samples, scores = None))
+
+
+# from version 6.4.0 u also can use these forms
+model.run(no_plot = False, start_generation= samples)
+model.run(no_plot = False, start_generation= (samples, None))
+
+
+# if u have scores array, u can put it too
+scores = np.array([f(sample) for sample in samples])
+model.run(no_plot = False, start_generation= (samples, scores))
+
 
 ##
 ## after first run

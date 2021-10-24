@@ -17,7 +17,7 @@ def f(X):
     
 dim = 6
     
-varbound = np.array([[0,10]]*dim)
+varbound = [(0,10)]*dim
 
 
 algorithm_param = {'max_num_iteration': 500,
@@ -45,6 +45,20 @@ model.run(no_plot = False, start_generation={'variables':samples, 'scores': None
 # it's not necessary to evaluate scores before
 # but u can do it if u have evaluated scores and don't wanna repeat calcucations
 
+
+# from version 6.3.0 it's recommended to use this form
+from geneticalgorithm2 import Generation
+model.run(no_plot = False, start_generation=Generation(variables = samples, scores = None))
+
+
+# from version 6.4.0 u also can use these forms
+model.run(no_plot = False, start_generation= samples)
+model.run(no_plot = False, start_generation= (samples, None))
+
+
+# if u have scores array, u can put it too
+scores = np.array([f(sample) for sample in samples])
+model.run(no_plot = False, start_generation= (samples, scores))
 
 
 # okay, let's continue optimization using saved last generation

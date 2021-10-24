@@ -179,13 +179,31 @@ class Generation(DictLikeGetter):
 
 
     @staticmethod
-    def from_object(dim: int, object: Union[str, Dict[str, np.ndarray], Generation]):
+    def from_object(dim: int, object: Union[str, Dict[str, np.ndarray], Generation, np.ndarray, Tuple[Optional[np.ndarray], Optional[np.ndarray]]]):
 
         obj_type = type(object)
 
         if obj_type == str:
 
             generation = Generation.load(object)
+
+        elif obj_type == np.ndarray:
+
+            assert len(object.shape) == 2 and (object.shape[1] == dim or object.shape[1] == dim + 1), f"if start_generation is numpy array, it must be with shape (samples, dim) or (samples, dim+1), not {object.shape}"
+
+            generation = Generation(object, None) if object.shape[1] == dim else Generation.from_pop_matrix(object)
+
+        elif obj_type == tuple:
+
+            assert len(object) == 2, f"if start_generation is tuple, it must be tuple with 2 components, not {len(object)}"
+
+            variables, scores = object
+
+            assert ( (variables is None or scores is None) or (
+                            variables.shape[0] == scores.size)), "start_generation object must contain variables and scores components which are None or 2D- and 1D-arrays with same shape"
+
+            generation = Generation(variables=variables, scores=scores)
+
 
         elif obj_type == dict:
             assert (('variables' in object and 'scores' in object) and (
@@ -198,7 +216,7 @@ class Generation(DictLikeGetter):
         elif obj_type == Generation:
             generation = Generation(variables=object['variables'], scores=object['scores'])
         else:
-            raise TypeError(f"invalid type of generation! Must be in (str, Dict[str, np.ndarray], Generation), not {obj_type}")
+            raise TypeError(f"invalid type of generation! Must be in (Union[str, Dict[str, np.ndarray], Generation, np.ndarray, Tuple[Optional[np.ndarray], Optional[np.ndarray]]]), not {obj_type}")
 
 
         generation.__check_dims()
