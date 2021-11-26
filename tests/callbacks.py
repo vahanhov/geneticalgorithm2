@@ -9,7 +9,7 @@ sys.path.append('..')
 
 import numpy as np
 from geneticalgorithm2 import geneticalgorithm2 as ga
-from geneticalgorithm2 import Callbacks
+from geneticalgorithm2 import Callbacks, MiddleCallbacks, ActionConditions
 
 
 dim = 16
@@ -36,3 +36,11 @@ model.run(
         Callbacks.PlotOptimizationProcess('callback_plot_example', save_gen_step=300, show = False, main_color='red', file_prefix='plot')
         ]
     )
+
+
+
+model.run(
+    middle_callbacks=[
+        MiddleCallbacks.UniversalCallback(lambda data: data, ActionConditions.EachGen(generation_step=1))
+    ]
+)

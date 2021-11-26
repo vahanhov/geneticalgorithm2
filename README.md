@@ -13,6 +13,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 - [About](#about)
 - [Installation](#installation)
 - [Updates information](#updates-information)
+  - [6.4.1 patch (bug fix)](#641-patch-bug-fix)
   - [6.4.0 minor update (refactoring)](#640-minor-update-refactoring)
   - [6.3.0 minor update (refactoring)](#630-minor-update-refactoring)
 - [Working process](#working-process)
@@ -89,6 +90,11 @@ pip install geneticalgorithm2
 ```
 
 # Updates information
+
+## 6.4.1 patch (bug fix)
+
+- fix bug setting attribute to algorithm parameters (in middle callbacks) 
+
 
 ## 6.4.0 minor update (refactoring)
 
