@@ -56,7 +56,7 @@ from .another_plotting_tools import plot_pop_scores
 
 
 ###############################################################################
-from .utils import can_be_prob, is_numpy
+from .utils import can_be_prob, is_numpy, union_to_matrix
 
 
 ###############################################################################
@@ -448,9 +448,9 @@ class geneticalgorithm2:
             """
             sets data to model
             """
-            nonlocal pop, t, counter
+            nonlocal pop, counter
             
-            pop = np.hstack((data['last_generation']['variables'], data['last_generation']['scores'].reshape(-1, 1)))
+            pop = union_to_matrix(data['last_generation']['variables'], data['last_generation']['scores'])
             self.pop_s = pop.shape[0]
             self.param['parents_portion'] = data['parents_portion']
             self.__set_par_s(data['parents_portion'])
@@ -657,7 +657,7 @@ class geneticalgorithm2:
         
         population, scores = initializer_func(pop[:, :-1], pop[:,-1])
         
-        pop = np.hstack([population, scores[:, np.newaxis]])
+        pop = union_to_matrix(population, scores)
         self.pop_s = pop.shape[0]
         
         #############################################################

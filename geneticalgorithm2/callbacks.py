@@ -12,7 +12,7 @@ from matplotlib.ticker import MaxNLocator
 from OppOpPopInit import OppositionOperators, SampleInitializers
 
 from .another_plotting_tools import plot_pop_scores
-from .utils import folder_create
+from .utils import mkdir, union_to_matrix
 
 
 class Callbacks:
@@ -25,7 +25,7 @@ class Callbacks:
     @staticmethod
     def SavePopulation(folder: str, save_gen_step: int = 50, file_prefix:str = 'population'):
         
-        folder_create(folder)
+        mkdir(folder)
 
         def func(generation_number: int, report_list: List[float], last_population: np.ndarray, last_scores: np.ndarray):
     
@@ -38,7 +38,8 @@ class Callbacks:
     
     @staticmethod
     def PlotOptimizationProcess(folder: str, save_gen_step: int = 50, show: bool = False, main_color: str = 'green', file_prefix: str = 'report'):
-        folder_create(folder)
+        
+        mkdir(folder)
 
         def func(generation_number: int, report_list: List[float], last_population: np.ndarray, last_scores: np.ndarray):
 
@@ -160,11 +161,11 @@ class Actions:
         if converter is None:
             def without_dup(pop, scores): # returns population without dups
                 _, index_of_dups = np.unique(pop, axis = 0, return_index = True) 
-                return np.hstack((pop[index_of_dups,:], scores[index_of_dups].reshape(-1, 1))), pop.shape[0] - index_of_dups.size
+                return union_to_matrix(pop[index_of_dups,:], scores[index_of_dups]), pop.shape[0] - index_of_dups.size
         else:
              def without_dup(pop, scores): # returns population without dups
                 _, index_of_dups = np.unique(np.array([converter(pop[i]) for i in range(pop.shape[0])]), axis = 0, return_index = True) 
-                return np.hstack((pop[index_of_dups,:], scores[index_of_dups].reshape(-1, 1))), pop.shape[0] - index_of_dups.size           
+                return union_to_matrix(pop[index_of_dups,:], scores[index_of_dups]), pop.shape[0] - index_of_dups.size
 
 
         if oppositor is None:
