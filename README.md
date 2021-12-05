@@ -13,6 +13,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 - [About](#about)
 - [Installation](#installation)
 - [Updates information](#updates-information)
+  - [6.5.0 minor update (refactoring)](#650-minor-update-refactoring)
   - [6.4.1 patch (bug fix)](#641-patch-bug-fix)
   - [6.4.0 minor update (refactoring)](#640-minor-update-refactoring)
   - [6.3.0 minor update (refactoring)](#630-minor-update-refactoring)
@@ -91,6 +92,11 @@ pip install geneticalgorithm2
 
 # Updates information
 
+## 6.5.0 minor update (refactoring)
+
+- another form of data object using with middle callbacks (`MiddleCallbackData` dataclass instead of dictionary)
+- type hints for callbacks module 
+
 ## 6.4.1 patch (bug fix)
 
 - fix bug setting attribute to algorithm parameters (in middle callbacks) 
@@ -128,7 +134,7 @@ import numpy as np
 
 from geneticalgorithm2 import geneticalgorithm2 as ga # for creating and running optimization model
 
-from geneticalgorithm2 import Generation, AlgorithmParams # classes for comfortable parameters setting and getting
+from geneticalgorithm2 import Generation, AlgorithmParams, MiddleCallbackData # classes for comfortable parameters setting and getting
 
 from geneticalgorithm2 import Crossover, Mutations, Selection # classes for specific mutation and crossover behavior
 
@@ -983,41 +989,39 @@ There is an amazing way to control optimization process using `MiddleCallbacks` 
 
 1. u can use several `MiddleCallbacks` callbacks as list at `middle_callbacks` parameter in `run()` method
 2. each middle callback is the pair of `action` and `condition` functions
-3. `condition(data)` function gets `data` object about primary model parameters and makes logical decision about applying `action` function
-4. `action(data)` function modifies `data` objects as u need -- and model will be modified by new `data`
-5. `data` object is the dictionary with several parameters u can modify:
+3. `condition(data)` (`Callable[[MiddleCallbackData], bool]`) function gets `data` object (dataclass `MiddleCallbackData` from version 6.5.0) about primary model parameters and makes logical decision about applying `action` function
+4. `action(data)` (`Callable[[MiddleCallbackData],MiddleCallbackData]`) function modifies `data` objects as u need -- and model will be modified by new `data`
+5. `data` object is the structure with several parameters u can modify:
    ```python
-    data = {
-        'last_generation': {
-            'variables': pop[:,:-1],
-            'scores': pop[:,-1]
-            },
-        'current_generation': t,
-        'report_list': self.report,
-                
-        'mutation_prob': self.prob_mut,
-        'crossover_prob': self.prob_cross,
-        'mutation': self.real_mutation,
-        'crossover': self.crossover,
-        'selection': self.selection,
+    data = MiddleCallbackData(
+        last_generation=Generation.from_pop_matrix(pop),
+        current_generation=t,
+        report_list=self.report,
 
-        'current_stagnation': counter,
-        'max_stagnation': self.mniwi,
+        mutation_prob=self.prob_mut,
+        crossover_prob=self.prob_cross,
+        mutation=self.real_mutation,
+        crossover=self.crossover,
+        selection=self.selection,
 
-        'parents_portion': self.param['parents_portion'],
-        'elit_ratio': self.param['elit_ratio']
+        current_stagnation=counter,
+        max_stagnation=self.mniwi,
 
-    }
+        parents_portion=self.param.parents_portion,
+        elit_ratio=self.param.elit_ratio,
+
+        set_function=self.set_function
+    )
    ```  
    So, the `action` function gets `data` objects and returns `data` object.
 
-It's very simple to create your own `action` and `condition` functions. But there are save popular functions in `Actions` and `ActionConditions` classes:
+It's very simple to create your own `action` and `condition` functions. But there are several popular functions contained in `Actions` and `ActionConditions` classes:
 * `actions`:
   * `Stop()` -- just stop optimization process
   * `ReduceMutationProb(reduce_coef = 0.9)` -- reduce mutation probability
-  * `ChangeRandomCrossover(available_crossovers)` -- change another (random) crossover from list of crossovers
-  * `ChangeRandomSelection(available_selections)`
-  * `ChangeRandomMutation(available_mutations)`
+  * `ChangeRandomCrossover(available_crossovers: Sequence[Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]])` -- change another (random) crossover from list of crossovers
+  * `ChangeRandomSelection(available_selections: Sequence[Callable[[np.ndarray, int], np.ndarray]])`
+  * `ChangeRandomMutation(available_mutations: Sequence[Callable[[float, float, float], float]])`
   * `RemoveDuplicates(oppositor = None, creator = None, converter = None)`; see [doc](geneticalgorithm2/callbacks.py)
   * `CopyBest(by_indexes)` -- copies best population object values (from dimensions in `by_indexes`) to all population
   * `PlotPopulationScores(title_pattern = lambda data: f"Generation {data['current_generation']}", save_as_name_pattern = None)` -- plot population scores; needs 2 functions like `data`->string for title and file name (to save)
