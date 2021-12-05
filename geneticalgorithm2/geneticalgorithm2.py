@@ -48,7 +48,7 @@ from OppOpPopInit import init_population, SampleInitializers, OppositionOperator
 
 ###############################################################################
 
-from.classes import AlgorithmParams, Generation
+from.classes import AlgorithmParams, Generation, MiddleCallbackData
 
 
 from .initializer import Population_initializer
@@ -418,55 +418,51 @@ class geneticalgorithm2:
             """
             returns all important data about model
             """
-            data = {
-                'last_generation': {
-                    'variables': pop[:,:-1],
-                    'scores': pop[:,-1]
-                },
-                'current_generation': t,
-                'report_list': self.report,
-                
-                'mutation_prob': self.prob_mut,
-                'crossover_prob': self.prob_cross,
-                'mutation': self.real_mutation,
-                'crossover': self.crossover,
-                'selection': self.selection,
+            return MiddleCallbackData(
+                last_generation=Generation.from_pop_matrix(pop),
+                current_generation=t,
+                report_list=self.report,
 
-                'current_stagnation': counter,
-                'max_stagnation': self.mniwi,
+                mutation_prob=self.prob_mut,
+                crossover_prob=self.prob_cross,
+                mutation=self.real_mutation,
+                crossover=self.crossover,
+                selection=self.selection,
 
-                'parents_portion': self.param['parents_portion'],
-                'elit_ratio': self.param['elit_ratio'],
+                current_stagnation=counter,
+                max_stagnation=self.mniwi,
 
-                'set_function': self.set_function
+                parents_portion=self.param.parents_portion,
+                elit_ratio=self.param.elit_ratio,
 
-            }
+                set_function=self.set_function
+            )
 
-            return data
-
-        def set_data(data):
+        def set_data(data: MiddleCallbackData):
             """
             sets data to model
             """
             nonlocal pop, counter
-            
-            pop = union_to_matrix(data['last_generation']['variables'], data['last_generation']['scores'])
+
+            pop = data.last_generation.as_wide_matrix()
             self.pop_s = pop.shape[0]
-            self.param['parents_portion'] = data['parents_portion']
-            self.__set_par_s(data['parents_portion'])
-            self.param['elit_ratio'] = data['elit_ratio']
-            self.__set_elit(self.pop_s, data['elit_ratio'])
 
-            self.prob_mut = data['mutation_prob']
-            self.prob_cross = data['crossover_prob']
-            self.real_mutation = data['mutation']
-            self.crossover = data['crossover']
-            self.selection = data['selection']
+            self.param.parents_portion = data.parents_portion
+            self.__set_par_s(data.parents_portion)
 
-            counter = data['current_stagnation']
-            self.mniwi = data['max_stagnation']
+            self.param.elit_ratio= data.elit_ratio
+            self.__set_elit(self.pop_s, data.elit_ratio)
 
-            self.set_function = data['set_function']
+            self.prob_mut = data.mutation_prob
+            self.prob_cross = data.crossover_prob
+            self.real_mutation = data.mutation
+            self.crossover = data.crossover
+            self.selection = data.selection
+
+            counter = data.current_generation
+            self.mniwi = data.max_stagnation
+
+            self.set_function = data.set_function
 
 
 
@@ -971,7 +967,7 @@ class geneticalgorithm2:
         simple function for creating set_function 
         function_for_set just applyes to each row of population
         """
-        def func(matrix):
+        def func(matrix: np.ndarray):
             return np.array([function_for_set(matrix[i,:]) for i in range(matrix.shape[0])])
         return func
     @staticmethod
@@ -979,7 +975,7 @@ class geneticalgorithm2:
         """
         like function_for_set but uses joblib with n_jobs (-1 goes to count of available processors)
         """
-        def func(matrix):
+        def func(matrix: np.ndarray):
             result = Parallel(n_jobs=n_jobs)(delayed(function_for_set)(matrix[i,:]) for i in range(matrix.shape[0]))
             return np.array(result)
         return func
