@@ -1,5 +1,5 @@
 
-from typing import List, Optional
+from typing import List, Optional, Callable, Tuple, Sequence
 
 import os
 import random
@@ -11,8 +11,10 @@ from matplotlib.ticker import MaxNLocator
 
 from OppOpPopInit import OppositionOperators, SampleInitializers
 
+from .classes import MiddleCallbackData, Generation
+
 from .another_plotting_tools import plot_pop_scores
-from .utils import folder_create
+from .utils import mkdir, union_to_matrix
 
 
 class Callbacks:
@@ -23,9 +25,9 @@ class Callbacks:
 
 
     @staticmethod
-    def SavePopulation(folder: str, save_gen_step: int = 50, file_prefix:str = 'population'):
+    def SavePopulation(folder: str, save_gen_step: int = 50, file_prefix: str = 'population'):
         
-        folder_create(folder)
+        mkdir(folder)
 
         def func(generation_number: int, report_list: List[float], last_population: np.ndarray, last_scores: np.ndarray):
     
@@ -38,7 +40,8 @@ class Callbacks:
     
     @staticmethod
     def PlotOptimizationProcess(folder: str, save_gen_step: int = 50, show: bool = False, main_color: str = 'green', file_prefix: str = 'report'):
-        folder_create(folder)
+        
+        mkdir(folder)
 
         def func(generation_number: int, report_list: List[float], last_population: np.ndarray, last_scores: np.ndarray):
 
@@ -76,16 +79,16 @@ class Actions:
     @staticmethod
     def Stop():
         
-        def func(data):
-            data['current_stagnation'] = 2*data['max_stagnation']
+        def func(data: MiddleCallbackData):
+            data.current_stagnation = 2*data.max_stagnation
             return data
         return func
 
     @staticmethod
-    def ReduceMutationProb(reduce_coef = 0.9):
+    def ReduceMutationProb(reduce_coef: float = 0.9):
         
-        def func(data):
-            data['mutation_prob'] *= reduce_coef
+        def func(data: MiddleCallbackData):
+            data.mutation_prob *= reduce_coef
             return data
         
         return func
@@ -100,28 +103,28 @@ class Actions:
 
 
     @staticmethod
-    def ChangeRandomCrossover(available_crossovers):
+    def ChangeRandomCrossover(available_crossovers: Sequence[Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]]):
 
-        def func(data):
-            data['crossover'] = random.choice(available_crossovers)
+        def func(data: MiddleCallbackData):
+            data.crossover = random.choice(available_crossovers)
             return data
 
         return func
     
     @staticmethod
-    def ChangeRandomSelection(available_selections):
+    def ChangeRandomSelection(available_selections: Sequence[Callable[[np.ndarray, int], np.ndarray]]):
 
-        def func(data):
-            data['selection'] = random.choice(available_selections)
+        def func(data: MiddleCallbackData):
+            data.selection = random.choice(available_selections)
             return data
 
         return func
 
     @staticmethod
-    def ChangeRandomMutation(available_mutations):
+    def ChangeRandomMutation(available_mutations: Sequence[Callable[[float, float, float], float]]):
 
         def func(data):
-            data['mutation'] = random.choice(available_mutations)
+            data.mutation = random.choice(available_mutations)
             return data
 
         return func
@@ -129,7 +132,11 @@ class Actions:
 
 
     @staticmethod
-    def RemoveDuplicates(oppositor = None, creator = None, converter = None):
+    def RemoveDuplicates(
+            oppositor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+            creator: Optional[Callable[[], np.ndarray]]  = None,
+            converter: Optional[Callable[[np.ndarray], np.ndarray]] = None
+    ):
         """
         Removes duplicates from population
 
@@ -142,33 +149,23 @@ class Actions:
         converter : func, optional
             function converts population samples in new format to compare (if needed). The default is None.
 
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
-
-        Returns
-        -------
-        TYPE
-            DESCRIPTION.
-
         """
 
         if creator is None and oppositor is None:
             raise Exception("No functions to fill population! creator or oppositors must be not None")
 
         if converter is None:
-            def without_dup(pop, scores): # returns population without dups
+            def without_dup(pop: np.ndarray, scores: np.ndarray): # returns population without dups
                 _, index_of_dups = np.unique(pop, axis = 0, return_index = True) 
-                return np.hstack((pop[index_of_dups,:], scores[index_of_dups].reshape(-1, 1))), pop.shape[0] - index_of_dups.size
+                return union_to_matrix(pop[index_of_dups,:], scores[index_of_dups]), pop.shape[0] - index_of_dups.size
         else:
-             def without_dup(pop, scores): # returns population without dups
+             def without_dup(pop: np.ndarray, scores: np.ndarray): # returns population without dups
                 _, index_of_dups = np.unique(np.array([converter(pop[i]) for i in range(pop.shape[0])]), axis = 0, return_index = True) 
-                return np.hstack((pop[index_of_dups,:], scores[index_of_dups].reshape(-1, 1))), pop.shape[0] - index_of_dups.size           
+                return union_to_matrix(pop[index_of_dups,:], scores[index_of_dups]), pop.shape[0] - index_of_dups.size
 
 
         if oppositor is None:
-            def remover(pop, scores, set_function):
+            def remover(pop: np.ndarray, scores: np.ndarray, set_function: Callable[[np.ndarray], np.ndarray]):
 
                 pp, count_to_create = without_dup(pop, scores) # pop without dups
                 pp2 = np.empty((count_to_create, pp.shape[1])) 
@@ -180,7 +177,7 @@ class Actions:
                 return new_pop[np.argsort(new_pop[:,-1]),:] # new pop
 
         else: # using oppositors
-            def remover(pop, scores, set_function):
+            def remover(pop: np.ndarray, scores: np.ndarray, set_function: Callable[[np.ndarray], np.ndarray]):
 
                 pp, count_to_create = without_dup(pop, scores) # pop without dups
 
@@ -200,11 +197,14 @@ class Actions:
                 return new_pop[np.argsort(new_pop[:,-1]),:] # new pop
 
 
-        def func(data):
-            new_pop = remover(data['last_generation']['variables'], data['last_generation']['scores'], data['set_function'])
-            
-            data['last_generation']['variables'] = new_pop[:,:-1]
-            data['last_generation']['scores'] = new_pop[:,-1]
+        def func(data: MiddleCallbackData):
+            new_pop = remover(
+                data.last_generation.variables,
+                data.last_generation.scores,
+                data.set_function
+            )
+
+            data.last_generation = Generation.from_pop_matrix(new_pop)
 
             return data
 
@@ -212,7 +212,7 @@ class Actions:
         return func
     
     @staticmethod
-    def CopyBest(by_indexes):
+    def CopyBest(by_indexes: Sequence[int]):
         """
         Copies best population object values (from dimensions in by_indexes) to all population
         """
@@ -220,21 +220,23 @@ class Actions:
         if type(by_indexes) != np.ndarray:
             by_indexes = np.array(by_indexes)
 
-        def func(data):
+        def func(data: MiddleCallbackData):
 
-            pop = data['last_generation']['variables']
-            scores = data['last_generation']['scores']
+            pop = data.last_generation.variables
+            scores = data.last_generation.scores
 
             pop[:, by_indexes] = pop[np.argmin(scores), by_indexes]
-            
-            data['last_generation']['variables'] = pop
-            data['last_generation']['scores'] = data['set_function'](pop)
+
+            data.last_generation = Generation(pop, data.set_function(pop))
 
             return data
         return func
 
-    
-    def PlotPopulationScores(title_pattern = lambda data: f"Generation {data['current_generation']}", save_as_name_pattern = None):
+    @staticmethod
+    def PlotPopulationScores(
+            title_pattern: Callable[[MiddleCallbackData], str] = lambda data: f"Generation {data.current_generation}",
+            save_as_name_pattern: Optional[Callable[[MiddleCallbackData], str]] = None
+    ):
         """
         plots population scores
         needs 2 functions like data->str for title and file name
@@ -242,33 +244,35 @@ class Actions:
 
         use_save_as = (lambda data: None) if save_as_name_pattern is None else save_as_name_pattern
 
-        def local_plot_callback(data):
+        def local_plot_callback(data: MiddleCallbackData):
 
-            plot_pop_scores(data['last_generation']['scores'], title = title_pattern(data), save_as = use_save_as(data))
+            plot_pop_scores(
+                data.last_generation.scores,
+                title = title_pattern(data),
+                save_as = use_save_as(data)
+            )
 
             return data
 
         return local_plot_callback
 
 
-
-
 class ActionConditions:
     
     @staticmethod
-    def EachGen(generation_step = 10):
+    def EachGen(generation_step: int = 10):
 
         if generation_step < 1 or type(generation_step) != int:
             raise Exception(f"Invalid generation step {generation_step}! Should be int and >=1")
         
         if generation_step == 1: return ActionConditions.Always()
 
-        def func(data):
-            return data['current_generation'] % generation_step == 0 and data['current_generation'] > 0
+        def func(data: MiddleCallbackData):
+            return data.current_generation % generation_step == 0 and data.current_generation > 0
         return func
 
     @staticmethod
-    def Always():
+    def Always() -> Callable[[MiddleCallbackData], bool]:
         """
         makes action each generation
         """
@@ -278,21 +282,21 @@ class ActionConditions:
 
 
     @staticmethod
-    def AfterStagnation(stagnation_generations = 50):
+    def AfterStagnation(stagnation_generations: int = 50):
 
-        def func(data):
-            return data['current_stagnation'] % stagnation_generations == 0 and data['current_stagnation'] > 0
+        def func(data: MiddleCallbackData):
+            return data.current_stagnation % stagnation_generations == 0 and data.current_stagnation > 0
         return func
 
 
     @staticmethod
-    def Several(list_of_conditions):
+    def Several(conditions: Sequence[Callable[[MiddleCallbackData], bool]]):
         """
-        returns function which checks all conditions from list_of_conditions
+        returns function which checks all conditions from conditions
         """
 
-        def func(data):
-            return all((cond(data) for cond in list_of_conditions))
+        def func(data: MiddleCallbackData):
+            return all((cond(data) for cond in conditions))
         
         return func
 
@@ -302,28 +306,32 @@ class ActionConditions:
 class MiddleCallbacks:
 
     @staticmethod
-    def UniversalCallback(action, condition):
+    def UniversalCallback(
+            action: Callable[[MiddleCallbackData],MiddleCallbackData],
+            condition: Callable[[MiddleCallbackData], bool],
+            set_data_after_callback: bool = True
+    ):
         
-        def func(data):
+        def func(data: MiddleCallbackData):
 
             cond = condition(data)
             if cond:
                 data = action(data)
 
-            return data, cond
+            return data, (cond if set_data_after_callback else False)
         
         return func
 
     @staticmethod
-    def ReduceMutationGen(reduce_coef = 0.9, min_mutation = 0.005, reduce_each_generation = 50, reload_each_generation = 500):
+    def ReduceMutationGen(reduce_coef: float = 0.9, min_mutation: float = 0.005, reduce_each_generation: int = 50, reload_each_generation: int = 500):
 
         start_mutation = None
 
-        def func(data):
+        def func(data: MiddleCallbackData):
             nonlocal start_mutation
             
-            gen = data['current_generation']
-            mut = data['mutation_prob']
+            gen = data.current_generation
+            mut = data.mutation_prob
 
             if start_mutation is None:
                 start_mutation = mut
@@ -338,7 +346,7 @@ class MiddleCallbacks:
                 mut = max(mut, min_mutation)
 
 
-            data['mutation_prob'] = mut
+            data.mutation_prob = mut
 
             return data, (c1 or c2)
 
@@ -349,7 +357,7 @@ class MiddleCallbacks:
        
 
     @staticmethod
-    def GeneDiversityStats(step_generations_for_plotting:int = 10):
+    def GeneDiversityStats(step_generations_for_plotting: int = 10):
 
         if step_generations_for_plotting < 1:
             raise Exception(f"Wrong step = {step_generations_for_plotting}, should be int and > 0!!")
@@ -360,11 +368,11 @@ class MiddleCallbacks:
         most = []
 
 
-        def func(data):
+        def func(data: MiddleCallbackData):
 
             nonlocal div, count, most
 
-            dt = data['last_generation']['variables']
+            dt = data.last_generation.variables
 
             uniq, counts = np.unique(dt, return_counts=True, axis = 0)
             # raise Exception()
@@ -377,7 +385,7 @@ class MiddleCallbacks:
             div.append(gene_diversity/dt.shape[1])
 
 
-            if data['current_generation'] % step_generations_for_plotting == 0:
+            if data.current_generation % step_generations_for_plotting == 0:
 
                 fig, axes = plt.subplots(3, 1)
 
@@ -414,9 +422,6 @@ class MiddleCallbacks:
 
 
             return data, False
-
-
-
 
         
         return func

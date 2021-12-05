@@ -12,7 +12,7 @@ from .crossovers import Crossover
 from .mutations import Mutations
 from .selections import Selection
 
-from .utils import can_be_prob
+from .utils import can_be_prob, union_to_matrix
 
 
 class DictLikeGetter:
@@ -162,6 +162,9 @@ class Generation(DictLikeGetter):
     def dim_size(self):
         return self.variables.shape[1]
 
+    def as_wide_matrix(self):
+        return union_to_matrix(self.variables, self.scores)
+
 
     def save(self, path: str):
         np.savez(path, population = self.variables, scores = self.scores)
@@ -235,6 +238,35 @@ class Generation(DictLikeGetter):
             variables = pop[:, :-1],
             scores = pop[:, -1]
         )
+
+
+
+@dataclass
+class MiddleCallbackData(DictLikeGetter):
+    """
+    data object using with middle callbacks
+    """
+
+    last_generation: Generation
+
+    current_generation: int
+    report_list: List[float]
+
+    mutation_prob: float
+    crossover_prob: float
+
+    mutation: Callable[[float, float, float], float]
+    crossover: Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]
+    selection: Callable[[np.ndarray, int], np.ndarray]
+
+    current_stagnation: int
+    max_stagnation: int
+
+    parents_portion: float
+    elit_ratio: float
+
+    set_function: Callable[[np.ndarray], np.ndarray]
+
 
 
 
