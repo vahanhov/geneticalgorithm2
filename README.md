@@ -8,20 +8,22 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 [![GitHub issues](https://img.shields.io/github/issues/Naereen/StrapDown.js.svg)](https://github.com/PasaOpasen/geneticalgorithm2/issues) 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/PasaOpasen/geneticalgorithm2/pulls)
 
-**This is the supported advanced fork of non-supported package** [geneticalgorithm](https://github.com/rmsolgi/geneticalgorithm) of *Ryan (Mohammad) Solgi*
+**This is the supported advanced optimized fork of non-supported package** [geneticalgorithm](https://github.com/rmsolgi/geneticalgorithm) of *Ryan (Mohammad) Solgi*
 
 - [About](#about)
 - [Installation](#installation)
 - [Updates information](#updates-information)
+  - [6.6.0 minor update (refactoring)](#660-minor-update-refactoring)
   - [6.5.1 patch](#651-patch)
   - [6.5.0 minor update (refactoring)](#650-minor-update-refactoring)
   - [6.4.1 patch (bug fix)](#641-patch-bug-fix)
   - [6.4.0 minor update (refactoring)](#640-minor-update-refactoring)
   - [6.3.0 minor update (refactoring)](#630-minor-update-refactoring)
 - [Working process](#working-process)
-  - [Methods and Properties of model:](#methods-and-properties-of-model)
+  - [How to run](#how-to-run)
   - [Constructor parameters](#constructor-parameters)
   - [Genetic algorithm's parameters](#genetic-algorithms-parameters)
+  - [Methods and Properties of model:](#methods-and-properties-of-model)
 - [Examples for begginer](#examples-for-begginer)
   - [A minimal example](#a-minimal-example)
   - [The simple example with integer variables](#the-simple-example-with-integer-variables)
@@ -75,23 +77,43 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
   - [How to initialize start population? How to continue optimization with new run?](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)
 # About
 
-**geneticalgorithm2** is  very flexible Python library distributed on [PyPI](https://pypi.org) for implementing standard and elitist 
+**geneticalgorithm2** is very flexible and highly optimized Python library for implementing classic
 [genetic-algorithm](https://towardsdatascience.com/introduction-to-optimization-with-genetic-algorithm-2f5001d9964b) (GA).
 
-This package solves *continuous*, [*combinatorial*](https://en.wikipedia.org/wiki/Combinatorial_optimization)
- and *mixed* [optimization](https://en.wikipedia.org/wiki/Optimization_problem) problems 
-with continuous, discrete, and mixed variables.
-It provides an easy optimized implementation of genetic-algorithm (GA) in Python.   
+Features of this package:
+
+* written on pure python
+* fast
+* no hard dependences (only numpy primary)
+* easy to use, easy to run
+* easy to logging
+* many plotting functions
+* many cases of crossover, mutation and selection
+* support of integer, boolean and real (continious/discrete) variables types
+* support of mixed types of variables
+* support of elitist and studEA genetic algorithm
+* support of revolutions   
     
 # Installation
-
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install geneticalgorithm2 in Python.
 
 ```
 pip install geneticalgorithm2
 ```
 
+or 
+
+```
+pip3 install geneticalgorithm2
+```
+
 # Updates information
+
+## 6.6.0 minor update (refactoring)
+
+- deprecated `variable_type_mixed`, now use `variable_type` for mixed optimization too
+- deprecated `output_dict`, now it's better object with name `result`
+- refactor of big part of **tests**
+- refactor of README
 
 ## 6.5.1 patch
 
@@ -132,7 +154,9 @@ All that classes are collected [in file](geneticalgorithm2/classes.py). To maint
 
 # Working process
 
-Firstly, u should **import needed packages**. All available imports are:
+## How to run
+
+Firstly, u should **import needed packages**. All available (but not always necessary) imports are:
 
 ```python
 import numpy as np
@@ -149,18 +173,19 @@ from geneticalgorithm2 import np_lru_cache # for cache function (if u want)
 
 from geneticalgorithm2 import plot_pop_scores # for plotting population scores, if u want
 
-from geneticalgorithm2 import Callbacks # simple callbacks
+from geneticalgorithm2 import Callbacks # simple callbacks (will be deprecated)
 
 from geneticalgorithm2 import Actions, ActionConditions, MiddleCallbacks # middle callbacks
 ```
+
 Next step: **define minimized function** like
 
 ```python
-def function(X): # X as numpy array
+def function(X: np.ndarray) -> float: # X as 1d-numpy array
     return np.sum(X**2) + X.mean() + X.min() + X[0]*X[2] # some float result
 ```
 
-If u want to find maximum, use this idea:
+If u want to find *maximum*, use this idea:
 
 ```python
 f_tmp = lambda arr: -target(arr)
@@ -173,6 +198,7 @@ tagret_result = -global_min
 ```
 
 Okay, also u should **create the bounds for each variable** (if exist) like here:
+
 ```python
 var_bound = np.array([[0,10]]*3) # 2D numpy array with shape (dim, 2)
 
@@ -184,13 +210,15 @@ var_bound = [
 ]
 
 ```
+U don't need to use variable boundaries only if variable type of each variable is boolean.
 
-After that **create a `geneticalgorithm2` object**:
+After that **create a `geneticalgorithm2` (was importing as ga) object**:
+
 ```python
+# style before 6.3.0 version (but still works)
 model = ga(function, dimension = 3, 
                 variable_type='real', 
                  variable_boundaries = var_bound,
-                 variable_type_mixed = None, 
                  function_timeout = 10,
                  algorithm_parameters={'max_num_iteration': None,
                                        'population_size':100,
@@ -209,7 +237,6 @@ model = ga(function, dimension = 3,
 model = ga(function, dimension = 3, 
                 variable_type='real', 
                  variable_boundaries = var_bound,
-                 variable_type_mixed = None, 
                  function_timeout = 10,
                  algorithm_parameters=AlgorithmParams(
                      max_num_iteration = None,
@@ -229,7 +256,6 @@ model = ga(function, dimension = 3,
 model = ga(function, dimension = 3, 
                 variable_type='real', 
                  variable_boundaries = var_bound,
-                 variable_type_mixed = None, 
                  function_timeout = 10,
                  algorithm_parameters=AlgorithmParams()
             )           
@@ -239,14 +265,15 @@ model = ga(function, dimension = 3,
 **Run the search method**:
 
 ```python
-model.run(
+# all of this parameters are default
+result = model.run(
     no_plot = False, 
     disable_progress_bar = False,
     disable_printing = False,
 
     set_function = None, 
     apply_function_to_parents = False, 
-    start_generation = {'variables':None, 'scores': None},
+    start_generation = None,
     studEA = False,
     mutation_indexes = None,
 
@@ -267,94 +294,17 @@ model.run(
     save_last_generation_as = None,
     seed = None
     )
+
+# best solution
+print(result.variable)
+
+# best score
+print(result.function)
+
+# last population
+print(result.last_population)
+
 ```
-
-Your best solution is computed!
-
-## Methods and Properties of model:
-
-**run()**: implements the genetic algorithm (GA) with parameters:
-
-* param **no_plot** (`bool`) - do not plot results using matplotlib by default
-
-* param **disable_progress_bar** (`bool`) - do not show progress bar (also it can be faster by 10-20 seconds)
-
-* param **disable_printing** (`bool`) - don't print any text (except progress bar)
-
-* param **set_function** (`Optional[Callable[[np.ndarray], np.ndarray]]`): 2D-array -> 1D-array function, which applies to matrix of population (size (samples, dimension)) to estimate their values
-        
-* param **apply_function_to_parents** (`bool`) - apply function to parents from previous generation (if it's needed, it can be needed at working with games agents)
-
-* param **start_generation** (`Union[str, Dict[str, np.ndarray], Generation, np.ndarray, Tuple[Optional[np.ndarray], Optional[np.ndarray]]]`) - `Generation` object or a dictionary with structure `{'variables':2D-array of samples, 'scores': function values on samples}` or path to `.npz` file (`str`) with saved generation (see [example](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)) or `np.ndarray` (with shape `(samples, dim)` or `(samples, dim+1)`) or tuple of `np.ndarray`s/`None`. If `'scores'` value is `None` the scores will be compute. [See this](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)  
-
-* param **studEA** (`bool`) - using stud EA strategy (crossover with best object always). Default is false. [Take a look](#standard-crossover-vs-stud-ea-crossover)
-* param **mutation_indexes** (`Optional[Union[Sequence[int], Set[int]]]`) - indexes of dimensions where mutation can be performed (all dimensions by default). [Example](tests/mut_indexes.py)
-
-* param **init_creator**: (`Optional[Callable[[], np.ndarray]]`), the function creates population samples. By default -- random uniform for real variables and random uniform for int. [Example](#optimization-with-oppositions)
-* param **init_oppositors**: (`Optional[Sequence[Callable[[np.ndarray], np.ndarray]]]`) list, the list of oppositors creates oppositions for base population. No by default. [Example](#optimization-with-oppositions)
-* param **duplicates_oppositor**: `Optional[Callable[[np.ndarray], np.ndarray]]`, oppositor for applying after duplicates removing. By default -- using just random initializer from creator. [Example](#duplicates-removing)
-* param **remove_duplicates_generation_step**: `None/int`, step for removing duplicates (have a sense with discrete tasks). No by default. [Example](#duplicates-removing)
-* param **revolution_oppositor** = `Optional[Callable[[np.ndarray], np.ndarray]]`, oppositor for revolution time. No by default. [Example](#revolutions)
-* param **revolution_after_stagnation_step** = `None/int`, create revolution after this generations of stagnation. No by default. [Example](#revolutions)
-* param **revolution_part** (`float`): the part of generation to being oppose. By default is 0.3. [Example](#revolutions)
-
-* param **population_initializer** (`Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]]`) - object for actions at population initialization step to create better start population. [Take a look](#creating-better-start-population)
-
-* param **stop_when_reached** (`Optional[float]`) - stop searching after reaching this value (it can be potential minimum or something else)
-
-* param **callbacks** (`Optional[Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]]]`) - list of callback functions with structure:
-  ```python 
-  def callback(generation_number, report_list, last_population_as_2D_array, last_population_scores_as_1D_array):
-      #
-      # do some action
-      #
-  ```
-    See [example of using callbacks](tests/callbacks.py). There are several callbacks in `Callbacks` class, such as:
-    * `Callbacks.SavePopulation(folder, save_gen_step = 50, file_prefix = 'population')`
-    * `Callbacks.PlotOptimizationProcess(folder, save_gen_step = 50, show = False, main_color = 'green', file_prefix = 'report')`
-
-* param **middle_callbacks** (`Sequence`) - list of functions made `MiddleCallbacks` class (please, have a look at [this](#middle-callbacks)) 
-
-
-* param **time_limit_secs** (`Optional[float]`) - limit time of working (in seconds). If `None`, there is no time limit (limit only for count of generation and so on). See [little example of using](tests/time_limit.py). Also there is simple conversion function for conversion some time in seconds:
-  ```python
-  from truefalsepython import time_to_seconds
-
-  total_seconds = time_to_seconds(
-      days = 2, # 2 days
-      hours = 13, # plus 13 hours
-      minutes = 7, # plus 7 minutes
-      seconds = 44 # plus 44 seconds
-  )
-  ```
-
-* param **save_last_generation_as** (`Optional[str]`) - path to `.npz` file for saving last_generation as numpy dictionary like `{'population': 2D-array, 'scores': 1D-array}`, `None` if doesn't need to save in file; [take a look](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)
-
-* param **seed** (`Optional[int]`) - random seed (None is doesn't matter)
-
-It would be more logical to use params like `studEA` as an algorithm param, but `run()`-way can be more comfortable for real using.
-
-    
-**output**:  
-  
-* `output_dict`: is a dictionary including the best set of variables found and the value of the given function associated to it. Structure:
-```js
-output_dict = {
-            'variable': best_variable, // as 1D-array
-            'function': best_function_value, // a number
-            'last_generation': Generation object
-}
-
-// Generation object is equal to dictionary:
-// {
-//     // values are sorted by scores
-//     'variables':last_generation_variables, // 2D-array samples*dim
-//     'scores': last_generation_function_values // 1D-array of scores
-// }
-```
-
-* `report`: is a record of the progress of the algorithm over iterations. There are also `report_average` and `report_min` fields which are the average and min generation values by each generation
-
 
 ## Constructor parameters
 
@@ -363,18 +313,10 @@ NOTE: This implementation minimizes the given objective function. (For maximizat
         
 * param **dimension** (`int`) - the number of decision variables
         
-* param **variable_type** (`str`) - 'bool' if all variables are Boolean; 'int' if all variables are integer; and 'real' if all variables are real value or continuous (for mixed type see *@param variable_type_mixed*). 
+* param **variable_type** (`Union[str, Sequence[str]]`) - 'bool' if all variables are Boolean; 'int' if all variables are integer; and 'real' if all variables are real value or continuous. For mixed types use sequence of string of type for each variable
         
 * param **variable_boundaries** (`Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]]`) - Default None; leave it None if variable_type is 'bool'; otherwise provide an sequence of tuples of length two as boundaries for each variable; the length of the array must be equal dimension. 
-For example, np.array(\[0,100\],\[0,200\]) determines lower boundary 0 and upper boundary 100 
-for first and upper boundary 200 for second variable where dimension is 2.
-        
-* param **variable_type_mixed** (`Optional[Sequence[str]]`) - Default None; leave it None if all variables have the same type; otherwise this can be used to specify the type of each variable separately. For example if the first 
-variable is integer but the second one is real the input is: 
-`['int', 'real']`. NOTE: it does not accept 'bool'. If variable
-type is Boolean use 'int' and provide a boundary as \[0,1\] 
-in variable_boundaries. Also if variable_type_mixed is applied, 
-variable_boundaries has to be defined.
+For example, `np.array([[0,100],[0,200]])` or `[(0, 100), (0, 200)]` determines lower boundary 0 and upper boundary 100 for first and upper boundary 200 for second variable where dimension is 2.
         
 * param **function_timeout** (`float`) - if the given function does not provide 
 output before function_timeout (unit is seconds) the algorithm raise error.
@@ -391,7 +333,6 @@ For example, when there is an infinite loop in the given function.
     * @ **mutation_type** (`Union[str, Callable[[float, float, float], float]]`) - Default is `uniform_by_center`
     * @ **selection_type** (`Union[str, Callable[[np.ndarray, int], np.ndarray]]`) - Default is `roulette`
     * @ **max_iteration_without_improv** (`int/None`) - maximum number of successive iterations without improvement. If `None` it is ineffective
-
 
 ## Genetic algorithm's parameters
 
@@ -561,6 +502,93 @@ If this parameter's value is `None` the algorithm sets maximum number of iterati
         return array_of_parents_indexes 
     ```
 ![](tests/selections.png)
+
+## Methods and Properties of model:
+
+**run()**: implements the genetic algorithm (GA) with parameters:
+
+* param **no_plot** (`bool`) - do not plot results using matplotlib by default
+
+* param **disable_progress_bar** (`bool`) - do not show progress bar (also it can be faster by 10-20 seconds)
+
+* param **disable_printing** (`bool`) - don't print any text (except progress bar)
+
+* param **set_function** (`Optional[Callable[[np.ndarray], np.ndarray]]`): 2D-array -> 1D-array function, which applies to matrix of population (size (samples, dimension)) to estimate their values
+        
+* param **apply_function_to_parents** (`bool`) - apply function to parents from previous generation (if it's needed, it can be needed at working with games agents)
+
+* param **start_generation** (`Union[str, Dict[str, np.ndarray], Generation, np.ndarray, Tuple[Optional[np.ndarray], Optional[np.ndarray]]]`) - `Generation` object or a dictionary with structure `{'variables':2D-array of samples, 'scores': function values on samples}` or path to `.npz` file (`str`) with saved generation (see [example](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)) or `np.ndarray` (with shape `(samples, dim)` or `(samples, dim+1)`) or tuple of `np.ndarray`s/`None`. If `'scores'` value is `None` the scores will be compute. [See this](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)  
+
+* param **studEA** (`bool`) - using stud EA strategy (crossover with best object always). Default is false. [Take a look](#standard-crossover-vs-stud-ea-crossover)
+* param **mutation_indexes** (`Optional[Union[Sequence[int], Set[int]]]`) - indexes of dimensions where mutation can be performed (all dimensions by default). [Example](tests/mut_indexes.py)
+
+* param **init_creator**: (`Optional[Callable[[], np.ndarray]]`), the function creates population samples. By default -- random uniform for real variables and random uniform for int. [Example](#optimization-with-oppositions)
+* param **init_oppositors**: (`Optional[Sequence[Callable[[np.ndarray], np.ndarray]]]`) list, the list of oppositors creates oppositions for base population. No by default. [Example](#optimization-with-oppositions)
+* param **duplicates_oppositor**: `Optional[Callable[[np.ndarray], np.ndarray]]`, oppositor for applying after duplicates removing. By default -- using just random initializer from creator. [Example](#duplicates-removing)
+* param **remove_duplicates_generation_step**: `None/int`, step for removing duplicates (have a sense with discrete tasks). No by default. [Example](#duplicates-removing)
+* param **revolution_oppositor** = `Optional[Callable[[np.ndarray], np.ndarray]]`, oppositor for revolution time. No by default. [Example](#revolutions)
+* param **revolution_after_stagnation_step** = `None/int`, create revolution after this generations of stagnation. No by default. [Example](#revolutions)
+* param **revolution_part** (`float`): the part of generation to being oppose. By default is 0.3. [Example](#revolutions)
+
+* param **population_initializer** (`Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]]`) - object for actions at population initialization step to create better start population. [Take a look](#creating-better-start-population)
+
+* param **stop_when_reached** (`Optional[float]`) - stop searching after reaching this value (it can be potential minimum or something else)
+
+* param **callbacks** (`Optional[Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]]]`) - list of callback functions with structure:
+  ```python 
+  def callback(generation_number, report_list, last_population_as_2D_array, last_population_scores_as_1D_array):
+      #
+      # do some action
+      #
+  ```
+    See [example of using callbacks](tests/callbacks.py). There are several callbacks in `Callbacks` class, such as:
+    * `Callbacks.SavePopulation(folder, save_gen_step = 50, file_prefix = 'population')`
+    * `Callbacks.PlotOptimizationProcess(folder, save_gen_step = 50, show = False, main_color = 'green', file_prefix = 'report')`
+
+* param **middle_callbacks** (`Sequence`) - list of functions made `MiddleCallbacks` class (please, have a look at [this](#middle-callbacks)) 
+
+
+* param **time_limit_secs** (`Optional[float]`) - limit time of working (in seconds). If `None`, there is no time limit (limit only for count of generation and so on). See [little example of using](tests/time_limit.py). Also there is simple conversion function for conversion some time in seconds:
+  ```python
+  from truefalsepython import time_to_seconds
+
+  total_seconds = time_to_seconds(
+      days = 2, # 2 days
+      hours = 13, # plus 13 hours
+      minutes = 7, # plus 7 minutes
+      seconds = 44 # plus 44 seconds
+  )
+  ```
+
+* param **save_last_generation_as** (`Optional[str]`) - path to `.npz` file for saving last_generation as numpy dictionary like `{'population': 2D-array, 'scores': 1D-array}`, `None` if doesn't need to save in file; [take a look](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)
+
+* param **seed** (`Optional[int]`) - random seed (None is doesn't matter)
+
+It would be more logical to use params like `studEA` as an algorithm param, but `run()`-way can be more comfortable for real using.
+
+    
+**output**:  
+  
+* `output_dict`: is a dictionary including the best set of variables found and the value of the given function associated to it. Structure:
+```js
+output_dict = {
+            'variable': best_variable, // as 1D-array
+            'function': best_function_value, // a number
+            'last_generation': Generation object
+}
+
+// Generation object is equal to dictionary:
+// {
+//     // values are sorted by scores
+//     'variables':last_generation_variables, // 2D-array samples*dim
+//     'scores': last_generation_function_values // 1D-array of scores
+// }
+```
+
+* `report`: is a record of the progress of the algorithm over iterations. There are also `report_average` and `report_min` fields which are the average and min generation values by each generation
+
+
+
 
 # Examples for begginer
 

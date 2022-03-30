@@ -98,7 +98,7 @@ class geneticalgorithm2:
 
         @param variable_type <string> - 'bool' if all variables are Boolean;
         'int' if all variables are integer; and 'real' if all variables are
-        real value or continuous. For mixed types use sequence with string for each variable
+        real value or continuous. For mixed types use sequence of string of type for each variable
 
         @param variable_boundaries <Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]]> - Default None; leave it
         None if variable_type is 'bool'; otherwise provide an array of tuples
