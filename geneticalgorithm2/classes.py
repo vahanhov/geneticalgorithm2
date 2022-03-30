@@ -247,10 +247,10 @@ class GAResult(DictLikeGetSet):
 
     @property
     def variable(self):
-        return Generation.variables[0]
+        return self.last_generation.variables[0]
     @property
     def function(self):
-        return Generation.scores[0]
+        return self.last_generation.scores[0]
 
 
 @dataclass

@@ -16,12 +16,14 @@ def f(X):
     return np.sum(X)
     
     
-varbound = np.array([[0,30]]*20)
+varbound = [[0,30]]*20
 
 model = ga(function=f, dimension=20, variable_type='real', variable_boundaries=varbound)
 
-model.run(
+result = model.run(
     no_plot = True,
     disable_progress_bar=True,
     disable_printing=True
-    )
+)
+
+print(result.function)

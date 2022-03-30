@@ -50,6 +50,7 @@ from .initializer import Population_initializer
 from .another_plotting_tools import plot_pop_scores
 
 from .utils import can_be_prob, is_numpy, union_to_matrix
+
 #endregion
 
 

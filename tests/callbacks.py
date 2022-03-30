@@ -32,13 +32,13 @@ model=ga(function=f,
 
 model.run(
     callbacks=[
-        Callbacks.SavePopulation('callback_pop_example', save_gen_step=500, file_prefix='constraints'),
-        Callbacks.PlotOptimizationProcess('callback_plot_example', save_gen_step=300, show = False, main_color='red', file_prefix='plot')
-        ]
-    )
+        Callbacks.SavePopulation('./output/callback/pop_example', save_gen_step=500, file_prefix='constraints'),
+        Callbacks.PlotOptimizationProcess('./output/callback/plot_example', save_gen_step=300, show = False, main_color='red', file_prefix='plot')
+    ]
+)
 
 
-
+# doing nothing, just for test
 model.run(
     middle_callbacks=[
         MiddleCallbacks.UniversalCallback(lambda data: data, ActionConditions.EachGen(generation_step=1))

@@ -40,10 +40,7 @@ model = ga(function=func, dimension=dim,
 
 start_pop = np.random.randint(0, 10, size = (100, dim))
 
-start_gen = {
-    'variables': start_pop,
-    'scores': None
-    }
+start_gen = (start_pop, None)
 
 
 np.random.seed(3)
@@ -76,5 +73,5 @@ plt.title('Duplicates removing')
 plt.legend()
 
 
-plt.savefig("remove_dups.png", dpi = 300)
+plt.savefig("./output/remove_dups.png", dpi = 300)
 plt.show()

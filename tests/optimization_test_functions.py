@@ -17,26 +17,26 @@ from OptimizationTestFunctions import Sphere, Ackley, AckleyTest, Rosenbrock, Fl
 dim = 2
 
 functions = [
-        Sphere(dim, degree = 2),
-        Ackley(dim),
-        AckleyTest(dim),
-        Rosenbrock(dim),
-        Fletcher(dim, seed = 1488),
-        Griewank(dim),
-        Penalty2(dim),
-        Quartic(dim),
-        Rastrigin(dim),
-        SchwefelDouble(dim),
-        SchwefelMax(dim),
-        SchwefelAbs(dim),
-        SchwefelSin(dim),
-        Stairs(dim),
-        Abs(dim),
-        Michalewicz(),
-        Scheffer(dim),
-        Eggholder(dim),
-        Weierstrass(dim)
-    ]
+    Sphere(dim, degree = 2),
+    Ackley(dim),
+    AckleyTest(dim),
+    Rosenbrock(dim),
+    Fletcher(dim, seed = 1488),
+    Griewank(dim),
+    Penalty2(dim),
+    Quartic(dim),
+    Rastrigin(dim),
+    SchwefelDouble(dim),
+    SchwefelMax(dim),
+    SchwefelAbs(dim),
+    SchwefelSin(dim),
+    Stairs(dim),
+    Abs(dim),
+    Michalewicz(),
+    Scheffer(dim),
+    Eggholder(dim),
+    Weierstrass(dim)
+]
 
 
 
@@ -62,10 +62,17 @@ for f in functions:
                        'mutation_type': 'uniform_by_center',
                        'selection_type': 'roulette',
                        'max_iteration_without_improv':100
-                       })
+                       }
+               )
     
-    model.run(no_plot = True, stop_when_reached = (f.f_best + 1e-5/(xmax - xmin)) if not (f.f_best is None) else None)
+    model.run(no_plot = True,
+              stop_when_reached = (f.f_best + 1e-5/(xmax - xmin)) if f.f_best is not None else None
+              )
     
     title = f"Optimization process for {type(f).__name__}"
     
-    model.plot_results(title = title, save_as = f"{title}.png", main_color = 'green')
+    model.plot_results(
+        title = title,
+        save_as = f"./output/opt_test_funcs/{title}.png",
+        main_color = 'green'
+    )

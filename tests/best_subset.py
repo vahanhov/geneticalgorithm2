@@ -68,4 +68,4 @@ model = ga(function=f,
                }
            )
 
-model.run(no_plot = False, start_generation={'variables': start_generation, 'scores': None})
+model.run(no_plot = False, start_generation=(start_generation, None))
