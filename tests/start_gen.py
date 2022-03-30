@@ -41,7 +41,7 @@ samples = np.random.uniform(0, 50, (300, dim)) # 300 is the new size of your gen
 
 
 
-model.run(no_plot = False, start_generation={'variables':samples, 'scores': None}) 
+model.run(no_plot = False, start_generation={'variables':samples, 'scores': None})
 # it's not necessary to evaluate scores before
 # but u can do it if u have evaluated scores and don't wanna repeat calcucations
 
@@ -63,4 +63,4 @@ model.run(no_plot = False, start_generation= (samples, scores))
 
 # okay, let's continue optimization using saved last generation
 
-model.run(no_plot = False, start_generation=model.output_dict['last_generation']) 
+model.run(no_plot = False, start_generation=model.result.last_generation)

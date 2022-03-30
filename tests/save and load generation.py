@@ -35,8 +35,8 @@ model = ga(function=f,
                        })
 
 # run and save last generation to file
-filename = "eggholder_lastgen.npz"
-model.run(save_last_generation_as = filename)
+filename = "./output/eggholder_lastgen.npz"
+model.run(save_last_generation_as=filename)
 
 
 # load start generation from file

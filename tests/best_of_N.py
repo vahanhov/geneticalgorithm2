@@ -54,5 +54,5 @@ plt.title('Selection best N objects before running GA')
 plt.legend()
 
 
-plt.savefig("init_best_of.png", dpi = 300)
+plt.savefig("./output/init_best_of.png", dpi = 300)
 plt.show()

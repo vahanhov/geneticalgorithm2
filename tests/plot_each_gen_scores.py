@@ -31,8 +31,11 @@ model = ga(function=f,
 
 model.run(           
     middle_callbacks = [
-               MiddleCallbacks.UniversalCallback(Actions.PlotPopulationScores(
-                   title_pattern= lambda data: f"Gen {data['current_generation']}",
-                   save_as_name_pattern=lambda data: f"{data['last_generation']['scores'].min()}.png"
-                   ), ActionConditions.EachGen(1))
-               ])
+       MiddleCallbacks.UniversalCallback(Actions.PlotPopulationScores(
+               title_pattern=lambda data: f"Gen {data['current_generation']}",
+               save_as_name_pattern=lambda data: f"./output/{data['last_generation']['scores'].min()}.png"
+           ),
+           ActionConditions.EachGen(1)
+       )
+    ]
+)

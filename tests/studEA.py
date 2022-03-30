@@ -17,7 +17,7 @@ def f(X):
     return np.sum(X)
     
     
-varbound = np.array([[0,10]]*20)
+varbound = [[0,10]]*20
 
 start_gen = np.random.uniform(0, 10, (100, 20))
 
@@ -31,7 +31,7 @@ model = ga(function=f, dimension=20, variable_type='real',
 
 for stud in (False, True):
     
-    model.run(no_plot = True, studEA= stud, start_generation={'variables':start_gen, 'scores': None})
+    model.run(no_plot = True, studEA= stud, start_generation=(start_gen, None), seed=1)
     
     plt.plot(model.report, label = f"studEA strategy = {stud}")
     
@@ -43,5 +43,5 @@ plt.title('Using stud EA strategy')
 plt.legend()
 
 
-plt.savefig("studEA.png", dpi = 300)
+plt.savefig("./output/studEA.png", dpi = 300)
 plt.show()

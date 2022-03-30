@@ -5,7 +5,7 @@
 
 # will break backward compatibility
 
-union variable_type and variable_type_mixed to one argument
+remove reports
 
 move dups and revolutions to middle callbacks
 

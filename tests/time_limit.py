@@ -16,7 +16,7 @@ def f(X):
     return np.sum(X)
     
     
-varbound = np.array([[0,10]]*20)
+varbound = [[0,10]]*20
 
 model = ga(function=f, dimension=20, variable_type='real', variable_boundaries=varbound)
 
@@ -24,7 +24,7 @@ model.run(no_plot = False,
           time_limit_secs = 3)
 
 
-from geneticalgorithm2 import time_to_seconds
+from truefalsepython import time_to_seconds
 
 model.run(no_plot = False,
           time_limit_secs = time_to_seconds(minutes = 0.5, seconds = 2))

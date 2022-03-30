@@ -23,34 +23,31 @@ def f(X):
     return np.mean(X - rd)
 
 
-    
 varbound = np.array([[0, 1]]*dim)
 
-model = ga(function=f, dimension = dim, variable_type='real', variable_boundaries=varbound,
+model = ga(function=f, dimension = dim,
+           variable_type='real', variable_boundaries=varbound,
            
-           algorithm_parameters = {'max_num_iteration': 1000,
-                   'population_size':50,
-                   'mutation_probability':0.1,
-                   'elit_ratio': 0.01,
-                   'crossover_probability': 0.5,
-                   'parents_portion': 0.3,
-                   'crossover_type':'uniform',
-                   'mutation_type': 'uniform_by_center',
-                   'selection_type': 'roulette',
-                   'max_iteration_without_improv':None}
+           algorithm_parameters = {
+                    'max_num_iteration': 1000,
+                    'population_size':50,
+                    'mutation_probability':0.1,
+                    'elit_ratio': 0.01,
+                    'crossover_probability': 0.5,
+                    'parents_portion': 0.3,
+                    'crossover_type':'uniform',
+                    'mutation_type': 'uniform_by_center',
+                    'selection_type': 'roulette',
+                    'max_iteration_without_improv':None
+                }
            )
-
-
 
 model.run(
     no_plot = False,
     middle_callbacks = [
-        
         MiddleCallbacks.GeneDiversityStats(20)
-        
-        ]
-
-          )
+    ]
+)
 
 
 

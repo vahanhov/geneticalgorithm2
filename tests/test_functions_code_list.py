@@ -45,12 +45,12 @@ for f in functions:
     
     lines.append(fr"![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20{name}.png)")
     
-    lines.append(fr"![](tests/Optimization%20process%20for%20{name}.png)")
+    lines.append(fr"![](tests/output/opt_test_funcs/Optimization%20process%20for%20{name}.png)")
     
     lines.append('')
     
 
-with open('optimization_test_func_code_for_md.txt', 'w') as file:
+with open('./output/opt_test_funcs/optimization_test_func_code_for_md.txt', 'w') as file:
     file.writelines([line + '\n' for line in lines])
 
 

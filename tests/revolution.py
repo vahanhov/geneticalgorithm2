@@ -29,8 +29,8 @@ iterations = 1000
     
 varbound = np.array([[-500,500]]*dim)
 
-model = ga(function=func, dimension=dim, 
-           variable_type='real', 
+model = ga(function=func, dimension=dim,
+           variable_type='real',
            variable_boundaries=varbound,
            algorithm_parameters={
                'max_num_iteration': iterations,
@@ -40,10 +40,7 @@ model = ga(function=func, dimension=dim,
 
 start_pop = np.random.uniform(low = -500, high = 500, size = (400, dim))
 
-start_gen = {
-    'variables': start_pop,
-    'scores': None
-    }
+start_gen = (start_pop, None)
 
 # default running
 
@@ -52,7 +49,7 @@ plt.plot(model.report, label = 'without revolution')
 
 # revolutions
 
-model.run(no_plot = True, 
+model.run(no_plot = True,
           start_generation=start_gen,
           revolution_after_stagnation_step = 80,
           revolution_part= 0.2,
@@ -61,11 +58,11 @@ model.run(no_plot = True,
 plt.plot(model.report, label = 'with revolution (quasi)')
 
 
-model.run(no_plot = True, 
+model.run(no_plot = True,
           start_generation=start_gen,
           revolution_after_stagnation_step = 80,
-          revolution_part= 0.2,
-          revolution_oppositor= OppositionOperators.Continual.quasi_reflect(minimums = varbound[:,0], maximums = varbound[:, 1])
+          revolution_part=0.2,
+          revolution_oppositor=OppositionOperators.Continual.quasi_reflect(minimums = varbound[:,0], maximums = varbound[:, 1])
           )
 plt.plot(model.report, label = 'with revolution (quasi_reflect)')
 
@@ -77,5 +74,5 @@ plt.title('Revolution')
 plt.legend()
 
 
-plt.savefig("revolution.png", dpi = 300)
+plt.savefig("./output/revolution.png", dpi = 300)
 plt.show()

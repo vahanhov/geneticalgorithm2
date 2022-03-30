@@ -27,6 +27,7 @@ SOFTWARE.
 ###############################################################################
 
 from typing import Callable, List, Tuple, Optional, Dict, Any, Union, Sequence, Set
+
 import collections
 import warnings
 
@@ -37,65 +38,56 @@ import random
 
 
 import numpy as np
-from joblib import Parallel, delayed
-
 from func_timeout import func_timeout, FunctionTimedOut
-
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
 
 from OppOpPopInit import init_population, SampleInitializers, OppositionOperators
 
-###############################################################################
+#region INTERNAL IMPORTS
 
-from.classes import AlgorithmParams, Generation, MiddleCallbackData
-
+from.classes import AlgorithmParams, Generation, MiddleCallbackData, GAResult
 
 from .initializer import Population_initializer
 from .another_plotting_tools import plot_pop_scores
 
-
-###############################################################################
 from .utils import can_be_prob, is_numpy, union_to_matrix
 
+#endregion
 
-###############################################################################
+
+
 
 class geneticalgorithm2:
     
-    '''  Genetic Algorithm (Elitist version) for Python
+    '''
+    Genetic Algorithm (Elitist version) for Python
     
     An implementation of elitist genetic algorithm for solving problems with
     continuous, integers, or mixed variables.
     
-    
-    Implementation and output:
-        
-        methods:
-                run(): implements the genetic algorithm
-                
-        outputs:
-                output_dict:  a dictionary including the best set of variables
-            found and the value of the given function associated to it.
-            {'variable': , 'function': }
-            
-                report: a list including the record of the progress of the
-                algorithm over iterations
-
+    repo path https://github.com/PasaOpasen/geneticalgorithm2
     '''
     
     default_params = AlgorithmParams()
     
-    
-    #############################################################
-    def __init__(self,
-                 function: Callable[[np.ndarray], float],
-                 dimension:int,
-                 variable_type:str = 'bool',
-                 variable_boundaries: Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]] = None,
-                 variable_type_mixed: Optional[Sequence[str]] = None,
-                 function_timeout:float = 10,
-                 algorithm_parameters: Union[AlgorithmParams, Dict[str, Any]] = default_params):
+    @property
+    def output_dict(self):
+        warnings.warn(
+            "'output_dict' is deprecated and will be removed at version 7 \n use 'result' instead"
+        )
+        return self.result
+
+    def __init__(
+            self,
+            function: Callable[[np.ndarray], float],
+            dimension: int,
+            variable_type: Union[str, Sequence[str]] = 'bool',
+            variable_boundaries: Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]] = None,
+
+            variable_type_mixed  = None,
+
+            function_timeout: float = 10,
+            algorithm_parameters: Union[AlgorithmParams, Dict[str, Any]] = default_params
+        ):
         '''
         @param function <Callable[[np.ndarray], float]> - the given objective function to be minimized
         NOTE: This implementation minimizes the given objective function.
@@ -106,7 +98,7 @@ class geneticalgorithm2:
 
         @param variable_type <string> - 'bool' if all variables are Boolean;
         'int' if all variables are integer; and 'real' if all variables are
-        real value or continuous (for mixed type see @param variable_type_mixed)
+        real value or continuous. For mixed types use sequence of string of type for each variable
 
         @param variable_boundaries <Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]]> - Default None; leave it
         None if variable_type is 'bool'; otherwise provide an array of tuples
@@ -115,14 +107,7 @@ class geneticalgorithm2:
         np.array([0,100],[0,200]) determines lower boundary 0 and upper boundary 100 for first
         and upper boundary 200 for second variable where dimension is 2.
 
-        @param variable_type_mixed <Optional[Sequence[str]]> - Default None; leave it
-        None if all variables have the same type; otherwise this can be used to
-        specify the type of each variable separately. For example if the first
-        variable is integer but the second one is real the input is:
-        np.array(['int'],['real']). NOTE: it does not accept 'bool'. If variable
-        type is Boolean use 'int' and provide a boundary as [0,1]
-        in variable_boundaries. Also if variable_type_mixed is applied,
-        variable_boundaries has to be defined.
+        @param variable_type_mixed -- deprecated
 
         @param function_timeout <float> - if the given function does not provide
         output before function_timeout (unit is seconds) the algorithm raise error.
@@ -169,11 +154,14 @@ class geneticalgorithm2:
         
         self.dim = int(dimension)
 
-        #types indexes
-        self.__set_types_indexes(variable_type, variable_type_mixed)
 
-        # input variables' boundaries
-        self.__set_var_boundaries(variable_type, variable_type_mixed, variable_boundaries)
+        if variable_type_mixed is not None:
+            warnings.warn(
+                f"argument variable_type_mixed is deprecated and will be removed at version 7\n use variable_type={tuple(variable_type_mixed)} instead"
+            )
+            variable_type = variable_type_mixed
+        self.__set_types_indexes(variable_type)  # types indexes
+        self.__set_var_boundaries(variable_type, variable_boundaries)  # input variables' boundaries
 
         
         ############################################################# 
@@ -206,43 +194,40 @@ class geneticalgorithm2:
         else:
             self.num_elit = int(trl)
 
-    def __set_types_indexes(self, variable_type, variable_type_mixed):
+    def __set_types_indexes(self, variable_type: Union[str, Sequence[str]]):
 
         indexes = np.arange(self.dim)
         self.indexes_int = np.array([])
         self.indexes_float = np.array([])
 
-        #############################################################
-        # input variable type
+        VALID_STRINGS = ( 'bool', 'int', 'real')
+        assert_message = f"\n variable_type must be 'bool', 'int', 'real' or a sequence with 'int' and 'real', got {variable_type}"
 
-        assert (variable_type in ( 'bool', 'int', 'real')), f"\n variable_type must be 'bool', 'int', or 'real', got {variable_type}"
-        #############################################################
-        # input variables' type (MIXED)
-
-        if variable_type_mixed is None:
-
+        if type(variable_type) == str:
+            assert (variable_type in VALID_STRINGS), assert_message
             if variable_type == 'real':
-                # self.var_type = np.array([['real']]*self.dim)
                 self.indexes_float = indexes
             else:
-                # self.var_type = np.array([['int']]*self.dim)
                 self.indexes_int = indexes
 
-        else:
+        else:  # sequence case
 
-            assert (len(variable_type_mixed) == self.dim), "\n variable_type must have a length equal dimension."
-            for i in variable_type_mixed:
-                assert (i in ('real',
-                              'int')), "\n variable_type_mixed is either 'int' or 'real' " + "ex:['int','real','real']" + "\n for 'boolean' use 'int' and specify boundary as [0,1]"
+            assert (len(variable_type) == self.dim), f"\n variable_type must have a length equal dimension. Should be {self.dim}, got {len(variable_type)}"
+            assert 'bool' not in variable_type, "don't use 'bool' if variable_type is a sequence, for 'boolean' case use 'int' and specify boundary as (0,1)"
+            assert all(v in VALID_STRINGS for v in variable_type), assert_message
 
-            vartypes = np.array(variable_type_mixed)
-
-            # self.var_type = variable_type_mixed
+            vartypes = np.array(variable_type)
             self.indexes_int = indexes[vartypes == 'int']
             self.indexes_float = indexes[vartypes == 'real']
 
-    def __set_var_boundaries(self, variable_type, variable_type_mixed, variable_boundaries):
-        if variable_type != 'bool' or variable_type_mixed is not None:
+    def __set_var_boundaries(
+        self,
+        variable_type: Union[str, Sequence[str]],
+        variable_boundaries
+    ):
+        if variable_type == 'bool':
+            self.var_bound = np.array([[0, 1]] * self.dim)
+        else:
 
             if is_numpy(variable_boundaries):
                 assert variable_boundaries.shape == (self.dim, 2), f"\n if variable_boundaries is numpy array, it must be with shape (dim, 2)"
@@ -253,8 +238,7 @@ class geneticalgorithm2:
                 assert(i[0]<=i[1]), "\n lower_boundaries must be smaller than upper_boundaries [lower,upper]"
 
             self.var_bound = np.array(variable_boundaries)
-        else:
-            self.var_bound = np.array([[0,1]]*self.dim)
+
 
     def __set_max_iterations(self):
 
@@ -314,35 +298,37 @@ class geneticalgorithm2:
 
 
 
-    def run(self,
-            no_plot: bool = False,
-            disable_progress_bar: bool = False,
-            disable_printing: bool = False,
+    def run(
+        self,
+        no_plot: bool = False,
+        disable_progress_bar: bool = False,
+        disable_printing: bool = False,
 
-            set_function: Optional[Callable[[np.ndarray], np.ndarray]] = None,
-            apply_function_to_parents: bool = False,
-            start_generation: Union[str, Dict[str, np.ndarray], Generation, np.ndarray, Tuple[Optional[np.ndarray], Optional[np.ndarray]]] = Generation(),
-            studEA: bool = False,
-            mutation_indexes: Optional[Union[Sequence[int], Set[int]]] = None,
+        set_function: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        apply_function_to_parents: bool = False,
+        start_generation: Union[str, Dict[str, np.ndarray], Generation, np.ndarray, Tuple[Optional[np.ndarray], Optional[np.ndarray]]] = Generation(),
+        studEA: bool = False,
+        mutation_indexes: Optional[Union[Sequence[int], Set[int]]] = None,
 
-            init_creator: Optional[Callable[[], np.ndarray]] = None,#+
-            init_oppositors: Optional[Sequence[Callable[[np.ndarray], np.ndarray]]] = None,
+        init_creator: Optional[Callable[[], np.ndarray]] = None,#+
+        init_oppositors: Optional[Sequence[Callable[[np.ndarray], np.ndarray]]] = None,
 
-            duplicates_oppositor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
-            remove_duplicates_generation_step: Optional[int] = None,
+        duplicates_oppositor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        remove_duplicates_generation_step: Optional[int] = None,
 
-            revolution_oppositor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
-            revolution_after_stagnation_step: Optional[int] = None,
-            revolution_part: float = 0.3,
-            
-            population_initializer: Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]] = Population_initializer(select_best_of = 1, local_optimization_step = 'never', local_optimizer = None),  #+
-            
-            stop_when_reached: Optional[float] = None,
-            callbacks: Optional[Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]]] = None,
-            middle_callbacks: Optional[Sequence] = None, #+
-            time_limit_secs: Optional[float] = None,
-            save_last_generation_as: Optional[str] = None,
-            seed: Optional[int] = None):
+        revolution_oppositor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        revolution_after_stagnation_step: Optional[int] = None,
+        revolution_part: float = 0.3,
+
+        population_initializer: Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]] = Population_initializer(select_best_of = 1, local_optimization_step = 'never', local_optimizer = None),  #+
+
+        stop_when_reached: Optional[float] = None,
+        callbacks: Optional[Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]]] = None,
+        middle_callbacks: Optional[Sequence] = None, #+
+        time_limit_secs: Optional[float] = None,
+        save_last_generation_as: Optional[str] = None,
+        seed: Optional[int] = None
+    ):
         """
         @param no_plot <boolean> - do not plot results using matplotlib by default
         
@@ -786,16 +772,9 @@ class geneticalgorithm2:
         self.report_min.append(pop[-1, self.dim])
         self.report_average.append(np.mean(pop[:, self.dim]))
         
-        
-
 
         last_generation = Generation.from_pop_matrix(pop)
-        self.output_dict = {
-            'variable': self.best_variable, 
-            'function': self.best_function,
-            'last_generation': last_generation
-            }
-        
+        self.result = GAResult(last_generation)
 
         if save_last_generation_as is not None:
             last_generation.save(save_last_generation_as)
@@ -822,6 +801,8 @@ class geneticalgorithm2:
                 sys.stdout.write(f'\nWarning: GA is terminated because of time limit ({time_limit_secs} secs) of working!')
 
 
+        return self.result
+
 ##############################################################################         
 
     def plot_results(self, show_mean = False, title = 'Genetic Algorithm', save_as = None, main_color = 'blue'):
@@ -831,6 +812,9 @@ class geneticalgorithm2:
         if len(self.report) == 0:
             sys.stdout.write("No results to plot!\n")
             return
+
+        import matplotlib.pyplot as plt
+        from matplotlib.ticker import MaxNLocator
         
         ax = plt.axes()
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -856,10 +840,10 @@ class geneticalgorithm2:
         Plots barplot of scores of last population
         """
 
-        if not hasattr(self, 'output_dict'):
-            raise Exception("There is no output_dict field into ga object! Before plotting generation u need to run seaching process")
+        if not hasattr(self, 'result'):
+            raise Exception("There is no 'result' field into ga object! Before plotting generation u need to run seaching process")
 
-        plot_pop_scores(self.output_dict['last_generation'].scores, title, save_as)
+        plot_pop_scores(self.result.last_generation.scores, title, save_as)
 
 
 ###############################################################################  
@@ -975,6 +959,7 @@ class geneticalgorithm2:
         """
         like function_for_set but uses joblib with n_jobs (-1 goes to count of available processors)
         """
+        from joblib import Parallel, delayed
         def func(matrix: np.ndarray):
             result = Parallel(n_jobs=n_jobs)(delayed(function_for_set)(matrix[i,:]) for i in range(matrix.shape[0]))
             return np.array(result)

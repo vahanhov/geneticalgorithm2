@@ -49,7 +49,7 @@ for cr in crossovers:
         ]
     
 
-with open('crossovers_example.txt', 'w') as file:
+with open('./output/crossovers_example.txt', 'w') as file:
     file.writelines([line.replace('.0','') + '\n' for line in lines])
 
 

@@ -38,12 +38,16 @@ model = ga(function=func, dimension=dim,
 
 oppositors = [
     None,
-    [OppositionOperators.Continual.quasi(minimums = varbound[:,0], maximums = varbound[:, 1])],
+
+    [
+        OppositionOperators.Continual.quasi(minimums = varbound[:,0], maximums = varbound[:, 1])
+    ],
+
     [
      OppositionOperators.Continual.quasi(minimums = varbound[:,0], maximums = varbound[:, 1]),
      OppositionOperators.Continual.over(minimums = varbound[:,0], maximums = varbound[:, 1])
-     ]
     ]
+]
 
 names = [
     'No oppositor, just random',
@@ -74,5 +78,5 @@ plt.title('Start gen. using oppositors')
 plt.legend()
 
 
-plt.savefig("init_best_of_opp.png", dpi = 300)
+plt.savefig("./output/init_best_of_opp.png", dpi = 300)
 plt.show()

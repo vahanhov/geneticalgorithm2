@@ -15,7 +15,7 @@ def f(X):
     return np.sum(X)
     
     
-varbound = np.array([[0,10]]*3)
+varbound = [[0,10]]*3
 
 model = ga(function=f, dimension=3, variable_type='int', variable_boundaries=varbound)
 

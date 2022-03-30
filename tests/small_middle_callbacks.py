@@ -21,7 +21,7 @@ def f(X):
     return np.sum(X)
     
     
-varbound = np.array([[0,10]]*20)
+varbound = [[0,10]]*20
 
 model = ga(function=f, 
            dimension=20, 
@@ -34,17 +34,21 @@ model.run(
     middle_callbacks = [
         #MiddleCallbacks.UniversalCallback(Actions.Stop(), ActionConditions.EachGen(30)),
         #MiddleCallbacks.UniversalCallback(Actions.ReduceMutationProb(reduce_coef = 0.98), ActionConditions.EachGen(30)),
-        MiddleCallbacks.UniversalCallback(Actions.ChangeRandomCrossover([
-            Crossover.shuffle(),
-            Crossover.two_point()
+        MiddleCallbacks.UniversalCallback(
+            Actions.ChangeRandomCrossover([
+                Crossover.shuffle(),
+                Crossover.two_point()
             ]), 
-                                          ActionConditions.EachGen(30)),
-        MiddleCallbacks.UniversalCallback(Actions.ChangeRandomMutation([
-            Mutations.uniform_by_x(),
-            Mutations.gauss_by_x()
+            ActionConditions.EachGen(30)
+        ),
+        MiddleCallbacks.UniversalCallback(
+            Actions.ChangeRandomMutation([
+                Mutations.uniform_by_x(),
+                Mutations.gauss_by_x()
             ]), 
-                                          ActionConditions.EachGen(50))
+            ActionConditions.EachGen(50)
+        )
         ]
-          )
+)
 
 
