@@ -27,6 +27,7 @@ SOFTWARE.
 ###############################################################################
 
 from typing import Callable, List, Tuple, Optional, Dict, Any, Union, Sequence, Set
+
 import collections
 import warnings
 
@@ -37,57 +38,43 @@ import random
 
 
 import numpy as np
-from joblib import Parallel, delayed
-
 from func_timeout import func_timeout, FunctionTimedOut
-
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
 
 from OppOpPopInit import init_population, SampleInitializers, OppositionOperators
 
-###############################################################################
+#region INTERNAL IMPORTS
 
-from.classes import AlgorithmParams, Generation, MiddleCallbackData
-
+from.classes import AlgorithmParams, Generation, MiddleCallbackData, GAResult
 
 from .initializer import Population_initializer
 from .another_plotting_tools import plot_pop_scores
 
-
-###############################################################################
 from .utils import can_be_prob, is_numpy, union_to_matrix
+#endregion
 
 
-###############################################################################
+
 
 class geneticalgorithm2:
     
-    '''  Genetic Algorithm (Elitist version) for Python
+    '''
+    Genetic Algorithm (Elitist version) for Python
     
     An implementation of elitist genetic algorithm for solving problems with
     continuous, integers, or mixed variables.
     
-    
-    Implementation and output:
-        
-        methods:
-                run(): implements the genetic algorithm
-                
-        outputs:
-                output_dict:  a dictionary including the best set of variables
-            found and the value of the given function associated to it.
-            {'variable': , 'function': }
-            
-                report: a list including the record of the progress of the
-                algorithm over iterations
-
+    repo path https://github.com/PasaOpasen/geneticalgorithm2
     '''
     
     default_params = AlgorithmParams()
     
-    
-    #############################################################
+    @property
+    def output_dict(self):
+        warnings.warn(
+            "'output_dict' is deprecated and will be removed at version 7 \n use 'result' instead"
+        )
+        return self.result
+
     def __init__(
             self,
             function: Callable[[np.ndarray], float],
@@ -784,16 +771,9 @@ class geneticalgorithm2:
         self.report_min.append(pop[-1, self.dim])
         self.report_average.append(np.mean(pop[:, self.dim]))
         
-        
-
 
         last_generation = Generation.from_pop_matrix(pop)
-        self.output_dict = {
-            'variable': self.best_variable, 
-            'function': self.best_function,
-            'last_generation': last_generation
-            }
-        
+        self.result = GAResult(last_generation)
 
         if save_last_generation_as is not None:
             last_generation.save(save_last_generation_as)
@@ -820,6 +800,8 @@ class geneticalgorithm2:
                 sys.stdout.write(f'\nWarning: GA is terminated because of time limit ({time_limit_secs} secs) of working!')
 
 
+        return self.result
+
 ##############################################################################         
 
     def plot_results(self, show_mean = False, title = 'Genetic Algorithm', save_as = None, main_color = 'blue'):
@@ -829,6 +811,9 @@ class geneticalgorithm2:
         if len(self.report) == 0:
             sys.stdout.write("No results to plot!\n")
             return
+
+        import matplotlib.pyplot as plt
+        from matplotlib.ticker import MaxNLocator
         
         ax = plt.axes()
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -854,10 +839,10 @@ class geneticalgorithm2:
         Plots barplot of scores of last population
         """
 
-        if not hasattr(self, 'output_dict'):
-            raise Exception("There is no output_dict field into ga object! Before plotting generation u need to run seaching process")
+        if not hasattr(self, 'result'):
+            raise Exception("There is no 'result' field into ga object! Before plotting generation u need to run seaching process")
 
-        plot_pop_scores(self.output_dict['last_generation'].scores, title, save_as)
+        plot_pop_scores(self.result.last_generation.scores, title, save_as)
 
 
 ###############################################################################  
@@ -973,6 +958,7 @@ class geneticalgorithm2:
         """
         like function_for_set but uses joblib with n_jobs (-1 goes to count of available processors)
         """
+        from joblib import Parallel, delayed
         def func(matrix: np.ndarray):
             result = Parallel(n_jobs=n_jobs)(delayed(function_for_set)(matrix[i,:]) for i in range(matrix.shape[0]))
             return np.array(result)

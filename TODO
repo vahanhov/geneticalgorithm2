@@ -5,6 +5,8 @@
 
 # will break backward compatibility
 
+remove reports
+
 move dups and revolutions to middle callbacks
 
 move function_timeout  to run ?  and function ????

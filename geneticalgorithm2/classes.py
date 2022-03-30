@@ -15,7 +15,7 @@ from .selections import Selection
 from .utils import can_be_prob, union_to_matrix
 
 
-class DictLikeGetter:
+class DictLikeGetSet:
     def __getitem__(self, item):
         return getattr(self, item)
 
@@ -32,7 +32,7 @@ _algorithm_params_slots = {'max_num_iteration','max_iteration_without_improv',
 
 
 @dataclass
-class AlgorithmParams(DictLikeGetter):
+class AlgorithmParams(DictLikeGetSet):
 
     max_num_iteration: Optional[int] = None
     max_iteration_without_improv: Optional[int] = None
@@ -144,7 +144,7 @@ class AlgorithmParams(DictLikeGetter):
 
 
 @dataclass
-class Generation(DictLikeGetter):
+class Generation(DictLikeGetSet):
     variables: Optional[np.ndarray] = None
     scores: Optional[np.ndarray] = None
 
@@ -240,9 +240,21 @@ class Generation(DictLikeGetter):
         )
 
 
+@dataclass
+class GAResult(DictLikeGetSet):
+
+    last_generation: Generation
+
+    @property
+    def variable(self):
+        return Generation.variables[0]
+    @property
+    def function(self):
+        return Generation.scores[0]
+
 
 @dataclass
-class MiddleCallbackData(DictLikeGetter):
+class MiddleCallbackData(DictLikeGetSet):
     """
     data object using with middle callbacks
     """
