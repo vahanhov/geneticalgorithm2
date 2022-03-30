@@ -249,8 +249,12 @@ class GAResult(DictLikeGetSet):
     def variable(self):
         return self.last_generation.variables[0]
     @property
-    def function(self):
+    def score(self):
         return self.last_generation.scores[0]
+    @property
+    def function(self):
+        warnings.warn(f"'function' field is deprecated, will be removed in version 7, use 'score' to get best population score")
+        return self.score
 
 
 @dataclass
