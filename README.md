@@ -13,6 +13,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 - [About](#about)
 - [Installation](#installation)
 - [Updates information](#updates-information)
+  - [6.6.2 patch (speed up)](#662-patch-speed-up)
   - [6.6.1 patch](#661-patch)
   - [6.6.0 minor update (refactoring)](#660-minor-update-refactoring)
   - [6.5.1 patch](#651-patch)
@@ -108,6 +109,10 @@ pip3 install geneticalgorithm2
 ```
 
 # Updates information
+
+## 6.6.2 patch (speed up)
+
+- fix and speed up mutation
 
 ## 6.6.1 patch
 
