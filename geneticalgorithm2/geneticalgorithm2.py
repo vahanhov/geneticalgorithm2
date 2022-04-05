@@ -76,18 +76,19 @@ class geneticalgorithm2:
         )
         return self.result
 
+    #region INIT
     def __init__(
-            self,
-            function: Callable[[np.ndarray], float],
-            dimension: int,
-            variable_type: Union[str, Sequence[str]] = 'bool',
-            variable_boundaries: Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]] = None,
+        self,
+        function: Callable[[np.ndarray], float],
+        dimension: int,
+        variable_type: Union[str, Sequence[str]] = 'bool',
+        variable_boundaries: Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]] = None,
 
-            variable_type_mixed  = None,
+        variable_type_mixed = None,
 
-            function_timeout: float = 10,
-            algorithm_parameters: Union[AlgorithmParams, Dict[str, Any]] = default_params
-        ):
+        function_timeout: float = 10,
+        algorithm_parameters: Union[AlgorithmParams, Dict[str, Any]] = default_params
+    ):
         '''
         @param function <Callable[[np.ndarray], float]> - the given objective function to be minimized
         NOTE: This implementation minimizes the given objective function.
@@ -179,7 +180,7 @@ class geneticalgorithm2:
         self.__set_max_iterations()
 
 
-    def __set_par_s(self, parents_portion):
+    def __set_par_s(self, parents_portion: float):
 
         self.par_s = int(parents_portion*self.pop_s)
         assert self.par_s <= self.pop_s, f'parents count {self.par_s} cannot be less than population size {self.pop_s}'
@@ -187,7 +188,7 @@ class geneticalgorithm2:
         if trl % 2 != 0:
             self.par_s += 1
 
-    def __set_elit(self, pop_size, elit_ratio):
+    def __set_elit(self, pop_size: int, elit_ratio: float):
         trl = pop_size*elit_ratio
         if trl < 1 and elit_ratio > 0:
             self.num_elit = 1
@@ -268,13 +269,9 @@ class geneticalgorithm2:
         else:
             self.mniwi = int(max_it)
 
+    #endregion
 
-
-    #
-    #
-    # RUN METHODS
-    #
-    #
+    #region RUN METHODS
 
     def __set_mutation_indexes(self, mutation_indexes):
 
@@ -803,7 +800,9 @@ class geneticalgorithm2:
 
         return self.result
 
-##############################################################################         
+    #endregion
+
+    #region PLOTTING
 
     def plot_results(self, show_mean = False, title = 'Genetic Algorithm', save_as = None, main_color = 'blue'):
         """
@@ -845,60 +844,57 @@ class geneticalgorithm2:
 
         plot_pop_scores(self.result.last_generation.scores, title, save_as)
 
+    #endregion
 
-###############################################################################  
-    
+    #region MUTATION
     def mut(self, x: np.ndarray):
         """
         just mutation
-
-        can be speeded up by np.intersection1d ?
         """
-        random_values = np.random.random(x.size)
 
         for i in self.indexes_int_mut:
-            if random_values[i] < self.prob_mut:
-                x[i] = np.random.randint(self.var_bound[i][0], self.var_bound[i][1]+1) 
-
+            if random.random() < self.prob_mut:
+                bounds = self.var_bound[i]
+                x[i] = random.randint(bounds[0], bounds[1])
 
         for i in self.indexes_float_mut:                
-            if random_values[i] < self.prob_mut:
-                x[i] = self.real_mutation(x[i], self.var_bound[i][0], self.var_bound[i][1]) 
+            if random.random() < self.prob_mut:
+                bounds = self.var_bound[i]
+                x[i] = self.real_mutation(x[i], bounds[0], bounds[1])
             
         return x
 
-###############################################################################
     def mut_middle(self, x: np.ndarray, p1: np.ndarray, p2: np.ndarray):
         """
         mutation oriented on parents
         """
-        
-        random_values = np.random.random(x.size)
-
         for i in self.indexes_int_mut:
 
-            if random_values[i] < self.prob_mut:
-                if p1[i] < p2[i]:
-                    x[i] = np.random.randint(p1[i],p2[i])
-                elif p1[i] > p2[i]:
-                    x[i] = np.random.randint(p2[i],p1[i])
+            if random.random() < self.prob_mut:
+                v1, v2 = p1[i], p2[i]
+                if v1 < v2:
+                    x[i] = random.randint(v1, v2)
+                elif v1 > v2:
+                    x[i] = random.randint(v2, v1)
                 else:
-                    x[i] = np.random.randint(self.var_bound[i][0], self.var_bound[i][1]+1)
+                    bounds = self.var_bound[i]
+                    x[i] = random.randint(bounds[0], bounds[1])
                         
         for i in self.indexes_float_mut:                
-            if random_values[i] < self.prob_mut:   
-                if p1[i] != p2[i]:
-                    x[i]=np.random.uniform(p1[i], p2[i]) 
+            if random.random() < self.prob_mut:
+                v1, v2 = p1[i], p2[i]
+                if v1 != v2:
+                    x[i] = random.uniform(v1, v2)
                 else:
-                    x[i]= np.random.uniform(self.var_bound[i][0], self.var_bound[i][1])
+                    bounds = self.var_bound[i]
+                    x[i] = random.uniform(bounds[0], bounds[1])
         return x
 
+    #endregion
 
-###############################################################################     
     def __evaluate(self):
         return self.f(self.temp)
-    
-###############################################################################    
+
     def __sim(self, X):
         
         self.temp = X#.copy()
@@ -930,21 +926,14 @@ class geneticalgorithm2:
         sys.stdout.write('\r%s %s%s %s' % (bar, percents, '%', status))
         sys.stdout.flush()     
 
-
     def __str__(self):
         return f"Genetic algorithm object with parameters {self.param}"
 
     def __repr__(self):
         return self.__str__()
 
+    #region Set functions
 
-
-
-##############################################################################
-#
-# Set functions
-#
-###############################################################################
     @staticmethod
     def default_set_function(function_for_set: Callable[[np.ndarray], float]):
         """
@@ -965,7 +954,7 @@ class geneticalgorithm2:
             return np.array(result)
         return func
             
-###############################################################################
+    #endregion
 
 
 
