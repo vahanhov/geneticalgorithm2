@@ -123,6 +123,7 @@ class geneticalgorithm2:
             @ parents_portion <float in [0,1]>
             @ crossover_type <string/function> - Default is 'uniform'; 'one_point' or 'two_point' (not only) are other options
             @ mutation_type <string/function> - Default is 'uniform_by_x'; see GitHub to check other options
+            @ mutation_discrete_type <string/function> - mutation type for discrete variables
             @ selection_type <string/function> - Default is 'roulette'; see GitHub to check other options
             @ max_iteration_without_improv <int> - maximum number of successive iterations without improvement. If None it is ineffective
 
@@ -139,7 +140,7 @@ class geneticalgorithm2:
             algorithm_parameters = AlgorithmParams.from_dict(algorithm_parameters)
 
         algorithm_parameters._check_if_valid()
-        self.crossover, self.real_mutation, self.selection = algorithm_parameters.get_CMS()
+        self.crossover, self.real_mutation, self.discrete_mutation, self.selection = algorithm_parameters.get_CMS_funcs()
 
         self.param = algorithm_parameters # if type(algorithm_parameters) == AlgorithmParams else AlgorithmParams.from_dict(algorithm_parameters)
 
@@ -236,7 +237,7 @@ class geneticalgorithm2:
                 assert len(variable_boundaries) == self.dim and all((len(t) == 2 for t in variable_boundaries)), "\n if variable_boundaries is sequence, it must be with len dim and boundary for each variable must be a tuple of length two"
 
             for i in variable_boundaries:
-                assert(i[0]<=i[1]), "\n lower_boundaries must be smaller than upper_boundaries [lower,upper]"
+                assert(i[0] <= i[1]), "\n lower_boundaries must be smaller than upper_boundaries [lower,upper]"
 
             self.var_bound = np.array(variable_boundaries)
 
@@ -855,7 +856,7 @@ class geneticalgorithm2:
         for i in self.indexes_int_mut:
             if random.random() < self.prob_mut:
                 bounds = self.var_bound[i]
-                x[i] = random.randint(bounds[0], bounds[1])
+                x[i] = self.discrete_mutation(x[i], bounds[0], bounds[1])
 
         for i in self.indexes_float_mut:                
             if random.random() < self.prob_mut:

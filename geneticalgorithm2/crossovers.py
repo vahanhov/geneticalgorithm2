@@ -9,6 +9,16 @@ def get_copies(x: np.ndarray, y: np.ndarray):
 
 
 class Crossover:
+
+    @staticmethod
+    def crossovers_dict():
+        return {
+            'one_point': Crossover.one_point(),
+            'two_point': Crossover.two_point(),
+            'uniform': Crossover.uniform(),
+            'segment': Crossover.segment(),
+            'shuffle': Crossover.shuffle(),
+        }
     
     @staticmethod
     def one_point():

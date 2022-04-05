@@ -8,6 +8,18 @@ import numpy as np
 class Selection:
 
     @staticmethod
+    def selections_dict():
+        return {
+            'fully_random': Selection.fully_random(),
+            'roulette': Selection.roulette(),
+            'stochastic': Selection.stochastic(),
+            'sigma_scaling': Selection.sigma_scaling(),
+            'ranking': Selection.ranking(),
+            'linear_ranking': Selection.linear_ranking(),
+            'tournament': Selection.tournament(),
+        }
+
+    @staticmethod
     def __inverse_scores(scores: np.ndarray):
         """
         inverse scores (min val goes to max)
