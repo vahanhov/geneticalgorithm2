@@ -13,6 +13,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 - [About](#about)
 - [Installation](#installation)
 - [Updates information](#updates-information)
+  - [6.7.0 minor update (new features)](#670-minor-update-new-features)
   - [6.6.2 patch (speed up)](#662-patch-speed-up)
   - [6.6.1 patch](#661-patch)
   - [6.6.0 minor update (refactoring)](#660-minor-update-refactoring)
@@ -25,6 +26,12 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
   - [How to run](#how-to-run)
   - [Constructor parameters](#constructor-parameters)
   - [Genetic algorithm's parameters](#genetic-algorithms-parameters)
+    - [AlgorithmParams object](#algorithmparams-object)
+    - [Parameters of algorithm](#parameters-of-algorithm)
+      - [**Count parameters**](#count-parameters)
+      - [**Crossover**](#crossover)
+      - [**Mutation**](#mutation)
+      - [**Selection**](#selection)
   - [Methods and Properties of model:](#methods-and-properties-of-model)
 - [Examples for begginer](#examples-for-begginer)
   - [A minimal example](#a-minimal-example)
@@ -109,6 +116,10 @@ pip3 install geneticalgorithm2
 ```
 
 # Updates information
+
+## 6.7.0 minor update (new features)
+
+- add `mutation_discrete_type` and `mutation_discrete_probability` parameters in model. It controls mutation behaviour for discrete (integer) variables and works like `mutation_type` and `mutation_probability` work for continious (real) variables. Take a look at [algorithm parameters](#parameters-of-algorithm) 
 
 ## 6.6.2 patch (speed up)
 
@@ -232,12 +243,14 @@ model = ga(function, dimension = 3,
                  function_timeout = 10,
                  algorithm_parameters={'max_num_iteration': None,
                                        'population_size':100,
-                                       'mutation_probability':0.1,
+                                       'mutation_probability': 0.1,
+                                       'mutation_discrete_probability': None,
                                        'elit_ratio': 0.01,
                                        'crossover_probability': 0.5,
                                        'parents_portion': 0.3,
                                        'crossover_type':'uniform',
                                        'mutation_type': 'uniform_by_center',
+                                       'mutation_discrete_type': 'uniform_discrete',
                                        'selection_type': 'roulette',
                                        'max_iteration_without_improv':None}
             )
@@ -252,11 +265,13 @@ model = ga(function, dimension = 3,
                      max_num_iteration = None,
                      population_size = 100,
                      mutation_probability = 0.1,
+                     mutation_discrete_probability = None,
                      elit_ratio = 0.01,
                      crossover_probability = 0.5,
                      parents_portion = 0.3,
                      crossover_type = 'uniform',
                      mutation_type = 'uniform_by_center',
+                     mutation_discrete_type = 'uniform_discrete',
                      selection_type = 'roulette',
                      max_iteration_without_improv = None
                      )
@@ -336,15 +351,19 @@ For example, when there is an infinite loop in the given function.
     * @ **max_num_iteration** (`int/None`) - stoping criteria of the genetic algorithm (GA)  
     * @ **population_size** (`int > 0`)   
     * @ **mutation_probability** (`float in [0,1]`)
+    * @ **mutation_discrete_probability** (`float in [0,1]` or `None`)
     * @ **elit_ration** (`float in [0,1]`) - part of elit objects in population; if > 0, there always will be 1 elit object at least  
     * @ **crossover_probability** (`float in [0,1]`) 
     * @ **parents_portion** (`float in [0,1]`) - part of parents from previous population to save in next population (including `elit_ration`)  
     * @ **crossover_type** (`Union[str, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]]`) - Default is `uniform`.
     * @ **mutation_type** (`Union[str, Callable[[float, float, float], float]]`) - Default is `uniform_by_center`
+    * @ **mutation_discrete_type** (`Union[str, Callable[[int, int, int], int]]`) - Default is `uniform_discrete`
     * @ **selection_type** (`Union[str, Callable[[np.ndarray, int], np.ndarray]]`) - Default is `roulette`
     * @ **max_iteration_without_improv** (`int/None`) - maximum number of successive iterations without improvement. If `None` it is ineffective
 
 ## Genetic algorithm's parameters
+
+### AlgorithmParams object
 
 The parameters of GA is defined as a dictionary or `AlgorithmParams` object:
 
@@ -354,11 +373,13 @@ algorithm_param = AlgorithmParams(
                 max_num_iteration = None,
                 population_size = 100,
                 mutation_probability = 0.1,
+                mutation_discrete_probability = None,
                 elit_ratio = 0.01,
                 crossover_probability = 0.5,
                 parents_portion = 0.3,
                 crossover_type = 'uniform',
                 mutation_type = 'uniform_by_center',
+                mutation_discrete_type = 'uniform_discrete',
                 selection_type = 'roulette',
                 max_iteration_without_improv = None
             )
@@ -366,15 +387,18 @@ algorithm_param = AlgorithmParams(
 
 # old style with dictionary
 # sometimes it's easier to use this style
+# especially if u need to set only few params
 algorithm_param = {
                    'max_num_iteration': None,
                    'population_size':100,
-                   'mutation_probability':0.1,
+                   'mutation_probability': 0.1,
+                   'mutation_discrete_probability': None,
                    'elit_ratio': 0.01,
                    'crossover_probability': 0.5,
                    'parents_portion': 0.3,
                    'crossover_type':'uniform',
                    'mutation_type': 'uniform_by_center',
+                   'mutation_discrete_type': 'uniform_discrete',
                    'selection_type': 'roulette',
                    'max_iteration_without_improv':None
                    }
@@ -405,12 +429,14 @@ varbound=[(0,10)]*3
 
 algorithm_param = {'max_num_iteration': 3000,
                    'population_size':100,
-                   'mutation_probability':0.1,
+                   'mutation_probability': 0.1,
+                   'mutation_discrete_probability': None,
                    'elit_ratio': 0.01,
                    'crossover_probability': 0.5,
                    'parents_portion': 0.3,
                    'crossover_type':'uniform',
                    'mutation_type': 'uniform_by_center',
+                   'mutation_discrete_type': 'uniform_discrete',
                    'selection_type': 'roulette',
                    'max_iteration_without_improv':None}
 
@@ -432,34 +458,38 @@ is equal to:
 ```js
 algorithm_param = {'max_num_iteration': 150,
                    'population_size':1000,
-                   'mutation_probability':0.1,
+                   'mutation_probability': 0.1,
+                   'mutation_discrete_probability': None,
                    'elit_ratio': 0.01,
                    'crossover_probability': 0.5,
                    'parents_portion': 0.3,
                    'crossover_type':'uniform',
                    'mutation_type': 'uniform_by_center',
+                   'mutation_discrete_type': 'uniform_discrete',
                    'selection_type': 'roulette',
                    'max_iteration_without_improv':None}
 ```
 
 But it is better to use `AlgorithmParams` object instead of dictionaries.
 
-**Parameters of algorithm**:
+### Parameters of algorithm
+
+#### **Count parameters**
 
 * **max_num_iteration**: The termination criterion of GA. 
 If this parameter's value is `None` the algorithm sets maximum number of iterations automatically as a function of the dimension, boundaries, and population size. The user may enter any number of iterations that they want. It is highly recommended that the user themselves determines the **max_num_iterations** and not to use `None`. Notice that **max_num_iteration** has been changed to 3000 (it was already `None`). 
 
 * **population_size**: determines the number of trial solutions in each iteration.
 
-* **mutation_probability**: determines the chance of each gene in each individual solution to be replaced by a random value.
-
 * **elit_ration**: determines the number of elites in the population. The default value is 0.01 (i.e. 1 percent). For example when population size is 100 and **elit_ratio** is 0.01 then there is one elite unit in the population. If this parameter is set to be zero then `geneticalgorithm2` implements a standard genetic algorithm instead of elitist GA. [See example](#standard-ga-vs-elitist-ga) of difference
-
-* **crossover_probability**: determines the chance of an existed solution to pass its genome (aka characteristics) to new trial solutions (aka offspring); the default value is 0.5 (i.e. 50 percent)
 
 * **parents_portion**: the portion of population filled by the members of the previous generation (aka parents); default is 0.3 (i.e. 30 percent of population)
 
 * **max_iteration_without_improv**: if the algorithms does not improve the objective function over the number of successive iterations determined by this parameter, then GA stops and report the best found solution before the `max_num_iterations` to be met. The default value is `None`. 
+
+#### **Crossover**
+
+* **crossover_probability**: determines the chance of an existed solution to pass its genome (aka characteristics) to new trial solutions (aka offspring); the default value is 0.5 (i.e. 50 percent)
 
 * **crossover_type**: there are several options including `'one_point'`, `'two_point'`, `'uniform'`, `'segment'`, `'shuffle'` crossover functions; default is `'uniform'` crossover. U also can use crossover as functions from `Crossover` class:
     * `Crossover.one_point()`
@@ -479,6 +509,13 @@ If this parameter's value is `None` the algorithm sets maximum number of iterati
         # some code
         return child_1, child_2
     ```
+
+#### **Mutation**
+
+* **mutation_probability**: determines the chance of each gene in each individual solution to be replaced by a random value. Works for continious variables or for all variables if **mutation_discrete_probability** is `None`
+
+* **mutation_discrete_probability**: works like **mutation_probability** but for discrete variables. If `None`, will be changed to **mutation_probability** value; so just don't specify this parameter if u don't need special mutation behaviour for discrete variables
+
 * **mutation_type**: there are several options (only for real variables) including `'uniform_by_x'`, `'uniform_by_center'`, `'gauss_by_x'`, `'gauss_by_center'`; default is `'uniform_by_center'`. U also can use mutation as functions from `Mutations` class:
     * `Mutations.gauss_by_center(sd = 0.2)`
     * `Mutations.gauss_by_x(sd = 0.1)`
@@ -487,10 +524,20 @@ If this parameter's value is `None` the algorithm sets maximum number of iterati
 
     (If u want) write your mutation function using syntax:
     ```python
-    def my_mutation(current_value: float, left_border: float, right_border: float):
+    def my_mutation(current_value: float, left_border: float, right_border: float) -> float:
         # some code
         return new_value 
     ```
+
+* **mutation_discrete_type**: now there is only one option for discrete variables mutation: `uniform_discrete` (`Mutations.uniform_discrete()`) which works like `uniform_by_center` real mutation but with integer numbers. Anyway, this option was included at version 6.7.0 to support custom discrete mutations if u need it. For using custom mutation just set this parameter to function like
+  ```python
+    def my_mutation(current_value: int, left_border: int, right_border: int) -> int:
+        # some code
+        return new_value 
+  ```
+
+#### **Selection**
+
 * **selection_type**: there are several options (only for real) including `'fully_random'` (just for fun), `'roulette'`, `'stochastic'`, `'sigma_scaling'`, `'ranking'`, `'linear_ranking'`, `'tournament'`; default is `roulette`. U also can use selection as functions from `Selection` class:
     * `Selection.fully_random()`
     * `Selection.roulette()`
