@@ -31,6 +31,7 @@ _algorithm_params_slots = {
     'max_iteration_without_improv',
     'population_size',
     'mutation_probability',
+    'mutation_discrete_probability',
     'elit_ratio',
     'crossover_probability',
     'parents_portion',
@@ -49,8 +50,10 @@ class AlgorithmParams(DictLikeGetSet):
     population_size: int = 100
 
     mutation_probability: float = 0.1
-    elit_ratio: float = 0.01
+    mutation_discrete_probability: Optional[float] = None
     crossover_probability: float = 0.5
+
+    elit_ratio: float = 0.01
     parents_portion: float = 0.3
 
     crossover_type: Union[str, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]] = 'uniform'
@@ -241,9 +244,11 @@ class MiddleCallbackData(DictLikeGetSet):
     report_list: List[float]
 
     mutation_prob: float
+    mutation_discrete_prob: float
     crossover_prob: float
 
     mutation: Callable[[float, float, float], float]
+    mutation_discrete: Callable[[int, int, int], int]
     crossover: Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]
     selection: Callable[[np.ndarray, int], np.ndarray]
 
