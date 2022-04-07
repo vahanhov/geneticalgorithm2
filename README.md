@@ -8,27 +8,31 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 [![GitHub issues](https://img.shields.io/github/issues/Naereen/StrapDown.js.svg)](https://github.com/PasaOpasen/geneticalgorithm2/issues) 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/PasaOpasen/geneticalgorithm2/pulls)
 
-**This is the supported advanced fork of non-supported package** [geneticalgorithm](https://github.com/rmsolgi/geneticalgorithm) of *Ryan (Mohammad) Solgi*
+**This is the supported advanced optimized fork of non-supported package** [geneticalgorithm](https://github.com/rmsolgi/geneticalgorithm) of *Ryan (Mohammad) Solgi*
 
 - [About](#about)
 - [Installation](#installation)
 - [Updates information](#updates-information)
+  - [6.6.2 patch (speed up)](#662-patch-speed-up)
+  - [6.6.1 patch](#661-patch)
+  - [6.6.0 minor update (refactoring)](#660-minor-update-refactoring)
   - [6.5.1 patch](#651-patch)
   - [6.5.0 minor update (refactoring)](#650-minor-update-refactoring)
   - [6.4.1 patch (bug fix)](#641-patch-bug-fix)
   - [6.4.0 minor update (refactoring)](#640-minor-update-refactoring)
   - [6.3.0 minor update (refactoring)](#630-minor-update-refactoring)
 - [Working process](#working-process)
-  - [Methods and Properties of model:](#methods-and-properties-of-model)
+  - [How to run](#how-to-run)
   - [Constructor parameters](#constructor-parameters)
   - [Genetic algorithm's parameters](#genetic-algorithms-parameters)
+  - [Methods and Properties of model:](#methods-and-properties-of-model)
 - [Examples for begginer](#examples-for-begginer)
   - [A minimal example](#a-minimal-example)
   - [The simple example with integer variables](#the-simple-example-with-integer-variables)
   - [The simple example with Boolean variables](#the-simple-example-with-boolean-variables)
   - [The simple example with mixed variables](#the-simple-example-with-mixed-variables)
   - [Optimization problems with constraints](#optimization-problems-with-constraints)
-  - [Select fixed count of objects from set](#select-fixed-count-of-objects-from-set)
+  - [Middle example: select fixed count of objects from set](#middle-example-select-fixed-count-of-objects-from-set)
 - [U should know these features](#u-should-know-these-features)
   - [Available crossovers](#available-crossovers)
   - [Function timeout](#function-timeout)
@@ -75,23 +79,51 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
   - [How to initialize start population? How to continue optimization with new run?](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)
 # About
 
-**geneticalgorithm2** is  very flexible Python library distributed on [PyPI](https://pypi.org) for implementing standard and elitist 
+**geneticalgorithm2** is very flexible and highly optimized Python library for implementing classic
 [genetic-algorithm](https://towardsdatascience.com/introduction-to-optimization-with-genetic-algorithm-2f5001d9964b) (GA).
 
-This package solves *continuous*, [*combinatorial*](https://en.wikipedia.org/wiki/Combinatorial_optimization)
- and *mixed* [optimization](https://en.wikipedia.org/wiki/Optimization_problem) problems 
-with continuous, discrete, and mixed variables.
-It provides an easy optimized implementation of genetic-algorithm (GA) in Python.   
+Features of this package:
+
+* written on pure python
+* fast
+* no hard dependences (only numpy primary)
+* easy to use, easy to run
+* easy to logging
+* many plotting functions
+* many cases of crossover, mutation and selection
+* support of integer, boolean and real (continious/discrete) variables types
+* support of mixed types of variables
+* support of elitist and studEA genetic algorithm
+* support of revolutions   
     
 # Installation
-
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install geneticalgorithm2 in Python.
 
 ```
 pip install geneticalgorithm2
 ```
 
+or 
+
+```
+pip3 install geneticalgorithm2
+```
+
 # Updates information
+
+## 6.6.2 patch (speed up)
+
+- fix and speed up mutation
+
+## 6.6.1 patch
+
+- removed unnecessary dependences
+
+## 6.6.0 minor update (refactoring)
+
+- deprecated `variable_type_mixed`, now use `variable_type` for mixed optimization too
+- deprecated `output_dict`, now it's better object with name `result`
+- refactor of big part of **tests**
+- refactor of README
 
 ## 6.5.1 patch
 
@@ -117,7 +149,7 @@ pip install geneticalgorithm2
     * `np.ndarray` with shape `(samples, dim)` for only population or `(samples, dim+1)` for concatenated population and score (scores is the last matrix column)
     * `tuple(np.ndarray/None, np.ndarray/None)` for variables and scores
   
-  here `variables` is 2D numpy array with shape `(samples, dim)`, `scores` is 1D numpy array with scores (function values) for each sample; [here](tests/start_gen.py) and [here](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run) u can see examples of using these valid forms 
+  here `variables` is 2D numpy array with shape `(samples, dim)`, `scores` is 1D numpy array with scores (function values) for each sample; [here](tests/output/start_gen.py) and [here](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run) u can see examples of using these valid forms 
 
 
 ## 6.3.0 minor update (refactoring)
@@ -132,7 +164,9 @@ All that classes are collected [in file](geneticalgorithm2/classes.py). To maint
 
 # Working process
 
-Firstly, u should **import needed packages**. All available imports are:
+## How to run
+
+Firstly, u should **import needed packages**. All available (but not always necessary) imports are:
 
 ```python
 import numpy as np
@@ -149,18 +183,19 @@ from geneticalgorithm2 import np_lru_cache # for cache function (if u want)
 
 from geneticalgorithm2 import plot_pop_scores # for plotting population scores, if u want
 
-from geneticalgorithm2 import Callbacks # simple callbacks
+from geneticalgorithm2 import Callbacks # simple callbacks (will be deprecated)
 
 from geneticalgorithm2 import Actions, ActionConditions, MiddleCallbacks # middle callbacks
 ```
+
 Next step: **define minimized function** like
 
 ```python
-def function(X): # X as numpy array
+def function(X: np.ndarray) -> float: # X as 1d-numpy array
     return np.sum(X**2) + X.mean() + X.min() + X[0]*X[2] # some float result
 ```
 
-If u want to find maximum, use this idea:
+If u want to find *maximum*, use this idea:
 
 ```python
 f_tmp = lambda arr: -target(arr)
@@ -173,6 +208,7 @@ tagret_result = -global_min
 ```
 
 Okay, also u should **create the bounds for each variable** (if exist) like here:
+
 ```python
 var_bound = np.array([[0,10]]*3) # 2D numpy array with shape (dim, 2)
 
@@ -184,13 +220,15 @@ var_bound = [
 ]
 
 ```
+U don't need to use variable boundaries only if variable type of each variable is boolean.
 
-After that **create a `geneticalgorithm2` object**:
+After that **create a `geneticalgorithm2` (was importing as ga) object**:
+
 ```python
+# style before 6.3.0 version (but still works)
 model = ga(function, dimension = 3, 
                 variable_type='real', 
                  variable_boundaries = var_bound,
-                 variable_type_mixed = None, 
                  function_timeout = 10,
                  algorithm_parameters={'max_num_iteration': None,
                                        'population_size':100,
@@ -209,7 +247,6 @@ model = ga(function, dimension = 3,
 model = ga(function, dimension = 3, 
                 variable_type='real', 
                  variable_boundaries = var_bound,
-                 variable_type_mixed = None, 
                  function_timeout = 10,
                  algorithm_parameters=AlgorithmParams(
                      max_num_iteration = None,
@@ -229,7 +266,6 @@ model = ga(function, dimension = 3,
 model = ga(function, dimension = 3, 
                 variable_type='real', 
                  variable_boundaries = var_bound,
-                 variable_type_mixed = None, 
                  function_timeout = 10,
                  algorithm_parameters=AlgorithmParams()
             )           
@@ -239,14 +275,15 @@ model = ga(function, dimension = 3,
 **Run the search method**:
 
 ```python
-model.run(
+# all of this parameters are default
+result = model.run(
     no_plot = False, 
     disable_progress_bar = False,
     disable_printing = False,
 
     set_function = None, 
     apply_function_to_parents = False, 
-    start_generation = {'variables':None, 'scores': None},
+    start_generation = None,
     studEA = False,
     mutation_indexes = None,
 
@@ -267,120 +304,35 @@ model.run(
     save_last_generation_as = None,
     seed = None
     )
+
+# best solution
+print(result.variable)
+
+# best score
+print(result.score)
+
+# last population
+print(result.last_population)
+
 ```
-
-Your best solution is computed!
-
-## Methods and Properties of model:
-
-**run()**: implements the genetic algorithm (GA) with parameters:
-
-* param **no_plot** (`bool`) - do not plot results using matplotlib by default
-
-* param **disable_progress_bar** (`bool`) - do not show progress bar (also it can be faster by 10-20 seconds)
-
-* param **disable_printing** (`bool`) - don't print any text (except progress bar)
-
-* param **set_function** (`Optional[Callable[[np.ndarray], np.ndarray]]`): 2D-array -> 1D-array function, which applies to matrix of population (size (samples, dimension)) to estimate their values
-        
-* param **apply_function_to_parents** (`bool`) - apply function to parents from previous generation (if it's needed, it can be needed at working with games agents)
-
-* param **start_generation** (`Union[str, Dict[str, np.ndarray], Generation, np.ndarray, Tuple[Optional[np.ndarray], Optional[np.ndarray]]]`) - `Generation` object or a dictionary with structure `{'variables':2D-array of samples, 'scores': function values on samples}` or path to `.npz` file (`str`) with saved generation (see [example](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)) or `np.ndarray` (with shape `(samples, dim)` or `(samples, dim+1)`) or tuple of `np.ndarray`s/`None`. If `'scores'` value is `None` the scores will be compute. [See this](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)  
-
-* param **studEA** (`bool`) - using stud EA strategy (crossover with best object always). Default is false. [Take a look](#standard-crossover-vs-stud-ea-crossover)
-* param **mutation_indexes** (`Optional[Union[Sequence[int], Set[int]]]`) - indexes of dimensions where mutation can be performed (all dimensions by default). [Example](tests/mut_indexes.py)
-
-* param **init_creator**: (`Optional[Callable[[], np.ndarray]]`), the function creates population samples. By default -- random uniform for real variables and random uniform for int. [Example](#optimization-with-oppositions)
-* param **init_oppositors**: (`Optional[Sequence[Callable[[np.ndarray], np.ndarray]]]`) list, the list of oppositors creates oppositions for base population. No by default. [Example](#optimization-with-oppositions)
-* param **duplicates_oppositor**: `Optional[Callable[[np.ndarray], np.ndarray]]`, oppositor for applying after duplicates removing. By default -- using just random initializer from creator. [Example](#duplicates-removing)
-* param **remove_duplicates_generation_step**: `None/int`, step for removing duplicates (have a sense with discrete tasks). No by default. [Example](#duplicates-removing)
-* param **revolution_oppositor** = `Optional[Callable[[np.ndarray], np.ndarray]]`, oppositor for revolution time. No by default. [Example](#revolutions)
-* param **revolution_after_stagnation_step** = `None/int`, create revolution after this generations of stagnation. No by default. [Example](#revolutions)
-* param **revolution_part** (`float`): the part of generation to being oppose. By default is 0.3. [Example](#revolutions)
-
-* param **population_initializer** (`Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]]`) - object for actions at population initialization step to create better start population. [Take a look](#creating-better-start-population)
-
-* param **stop_when_reached** (`Optional[float]`) - stop searching after reaching this value (it can be potential minimum or something else)
-
-* param **callbacks** (`Optional[Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]]]`) - list of callback functions with structure:
-  ```python 
-  def callback(generation_number, report_list, last_population_as_2D_array, last_population_scores_as_1D_array):
-      #
-      # do some action
-      #
-  ```
-    See [example of using callbacks](tests/callbacks.py). There are several callbacks in `Callbacks` class, such as:
-    * `Callbacks.SavePopulation(folder, save_gen_step = 50, file_prefix = 'population')`
-    * `Callbacks.PlotOptimizationProcess(folder, save_gen_step = 50, show = False, main_color = 'green', file_prefix = 'report')`
-
-* param **middle_callbacks** (`Sequence`) - list of functions made `MiddleCallbacks` class (please, have a look at [this](#middle-callbacks)) 
-
-
-* param **time_limit_secs** (`Optional[float]`) - limit time of working (in seconds). If `None`, there is no time limit (limit only for count of generation and so on). See [little example of using](tests/time_limit.py). Also there is simple conversion function for conversion some time in seconds:
-  ```python
-  from truefalsepython import time_to_seconds
-
-  total_seconds = time_to_seconds(
-      days = 2, # 2 days
-      hours = 13, # plus 13 hours
-      minutes = 7, # plus 7 minutes
-      seconds = 44 # plus 44 seconds
-  )
-  ```
-
-* param **save_last_generation_as** (`Optional[str]`) - path to `.npz` file for saving last_generation as numpy dictionary like `{'population': 2D-array, 'scores': 1D-array}`, `None` if doesn't need to save in file; [take a look](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)
-
-* param **seed** (`Optional[int]`) - random seed (None is doesn't matter)
-
-It would be more logical to use params like `studEA` as an algorithm param, but `run()`-way can be more comfortable for real using.
-
-    
-**output**:  
-  
-* `output_dict`: is a dictionary including the best set of variables found and the value of the given function associated to it. Structure:
-```js
-output_dict = {
-            'variable': best_variable, // as 1D-array
-            'function': best_function_value, // a number
-            'last_generation': Generation object
-}
-
-// Generation object is equal to dictionary:
-// {
-//     // values are sorted by scores
-//     'variables':last_generation_variables, // 2D-array samples*dim
-//     'scores': last_generation_function_values // 1D-array of scores
-// }
-```
-
-* `report`: is a record of the progress of the algorithm over iterations. There are also `report_average` and `report_min` fields which are the average and min generation values by each generation
-
 
 ## Constructor parameters
 
-* param **function** (`Callable[[np.ndarray], float]`) - the given objective function to be minimized  
+* **function** (`Callable[[np.ndarray], float]`) - the given objective function to be minimized  
 NOTE: This implementation minimizes the given objective function. (For maximization multiply function by a negative sign: the absolute value of the output would be the actual objective function)
         
-* param **dimension** (`int`) - the number of decision variables
+* **dimension** (`int`) - the number of decision variables
         
-* param **variable_type** (`str`) - 'bool' if all variables are Boolean; 'int' if all variables are integer; and 'real' if all variables are real value or continuous (for mixed type see *@param variable_type_mixed*). 
+* **variable_type** (`Union[str, Sequence[str]]`) - 'bool' if all variables are Boolean; 'int' if all variables are integer; and 'real' if all variables are real value or continuous. For mixed types use sequence of string of type for each variable
         
-* param **variable_boundaries** (`Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]]`) - Default None; leave it None if variable_type is 'bool'; otherwise provide an sequence of tuples of length two as boundaries for each variable; the length of the array must be equal dimension. 
-For example, np.array(\[0,100\],\[0,200\]) determines lower boundary 0 and upper boundary 100 
-for first and upper boundary 200 for second variable where dimension is 2.
+* **variable_boundaries** (`Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]]`) - Default None; leave it None if variable_type is 'bool'; otherwise provide an sequence of tuples of length two as boundaries for each variable; the length of the array must be equal dimension. 
+For example, `np.array([[0,100],[0,200]])` or `[(0, 100), (0, 200)]` determines lower boundary 0 and upper boundary 100 for first and upper boundary 200 for second variable where dimension is 2.
         
-* param **variable_type_mixed** (`Optional[Sequence[str]]`) - Default None; leave it None if all variables have the same type; otherwise this can be used to specify the type of each variable separately. For example if the first 
-variable is integer but the second one is real the input is: 
-`['int', 'real']`. NOTE: it does not accept 'bool'. If variable
-type is Boolean use 'int' and provide a boundary as \[0,1\] 
-in variable_boundaries. Also if variable_type_mixed is applied, 
-variable_boundaries has to be defined.
-        
-* param **function_timeout** (`float`) - if the given function does not provide 
+* **function_timeout** (`float`) - if the given function does not provide 
 output before function_timeout (unit is seconds) the algorithm raise error.
 For example, when there is an infinite loop in the given function. 
         
-* param **algorithm_parameters** (`Union[AlgorithmParams, Dict[str, Any]]`). Dictionary or AlgorithmParams object with fields:  
+* **algorithm_parameters** (`Union[AlgorithmParams, Dict[str, Any]]`). Dictionary or AlgorithmParams object with fields:  
     * @ **max_num_iteration** (`int/None`) - stoping criteria of the genetic algorithm (GA)  
     * @ **population_size** (`int > 0`)   
     * @ **mutation_probability** (`float in [0,1]`)
@@ -392,14 +344,13 @@ For example, when there is an infinite loop in the given function.
     * @ **selection_type** (`Union[str, Callable[[np.ndarray, int], np.ndarray]]`) - Default is `roulette`
     * @ **max_iteration_without_improv** (`int/None`) - maximum number of successive iterations without improvement. If `None` it is ineffective
 
-
 ## Genetic algorithm's parameters
 
 The parameters of GA is defined as a dictionary or `AlgorithmParams` object:
 
 ```python
 
-AlgorithmParams(
+algorithm_param = AlgorithmParams(
                 max_num_iteration = None,
                 population_size = 100,
                 mutation_probability = 0.1,
@@ -414,6 +365,7 @@ AlgorithmParams(
 
 
 # old style with dictionary
+# sometimes it's easier to use this style
 algorithm_param = {
                    'max_num_iteration': None,
                    'population_size':100,
@@ -428,22 +380,15 @@ algorithm_param = {
                    }
 
 ```
-The above dictionary refers to the default values that has been set already. 
-One may simply copy this code from here and change the values and use the modified dictionary as the argument of `geneticalgorithm2`. 
 
-Another way of accessing this params object is using the command below:
-
+To get actual default params use code:
 ```python
-import numpy as np
-from geneticalgorithm2 import geneticalgorithm2 as ga
+params = ga.default_params
+```
 
-def f(X):
-    return np.sum(X)
-    
-model=ga(function=f,dimension=3,variable_type='bool')
-
-print(model.param)
-
+To get actual parameters of existing model use code:
+```python
+params = model.param
 ```
 
 An example of setting a new set of parameters for genetic algorithm and running `geneticalgorithm2` for our first simple example again:
@@ -473,7 +418,8 @@ model=ga(function=f,
             dimension=3,
             variable_type='real',
             variable_boundaries=varbound,
-            algorithm_parameters=algorithm_param)
+            algorithm_parameters=algorithm_param
+        )
 
 model.run()
 ```
@@ -503,11 +449,11 @@ But it is better to use `AlgorithmParams` object instead of dictionaries.
 * **max_num_iteration**: The termination criterion of GA. 
 If this parameter's value is `None` the algorithm sets maximum number of iterations automatically as a function of the dimension, boundaries, and population size. The user may enter any number of iterations that they want. It is highly recommended that the user themselves determines the **max_num_iterations** and not to use `None`. Notice that **max_num_iteration** has been changed to 3000 (it was already `None`). 
 
-* **population_size**: determines the number of trial solutions in each iteration. The default value is 100.
+* **population_size**: determines the number of trial solutions in each iteration.
 
-* **mutation_probability**: determines the chance of each gene in each individual solution to be replaced by a random value. The default is 0.1 (i.e. 10 percent). 
+* **mutation_probability**: determines the chance of each gene in each individual solution to be replaced by a random value.
 
-* **elit_ration**: determines the number of elites in the population. The default value is 0.01 (i.e. 1 percent). For example when population size is 100 and **elit_ratio** is 0.01 then there is one elite in the population. If this parameter is set to be zero then `geneticalgorithm2` implements a standard genetic algorithm instead of elitist GA. [See example](#standard-ga-vs-elitist-ga)
+* **elit_ration**: determines the number of elites in the population. The default value is 0.01 (i.e. 1 percent). For example when population size is 100 and **elit_ratio** is 0.01 then there is one elite unit in the population. If this parameter is set to be zero then `geneticalgorithm2` implements a standard genetic algorithm instead of elitist GA. [See example](#standard-ga-vs-elitist-ga) of difference
 
 * **crossover_probability**: determines the chance of an existed solution to pass its genome (aka characteristics) to new trial solutions (aka offspring); the default value is 0.5 (i.e. 50 percent)
 
@@ -515,25 +461,25 @@ If this parameter's value is `None` the algorithm sets maximum number of iterati
 
 * **max_iteration_without_improv**: if the algorithms does not improve the objective function over the number of successive iterations determined by this parameter, then GA stops and report the best found solution before the `max_num_iterations` to be met. The default value is `None`. 
 
-* **crossover_type**: there are several options including `one_point`, `two_point`, `uniform`, `segment`, `shuffle` crossover functions; default is `uniform` crossover. U also can use crossover functions from `Crossover` class:
+* **crossover_type**: there are several options including `'one_point'`, `'two_point'`, `'uniform'`, `'segment'`, `'shuffle'` crossover functions; default is `'uniform'` crossover. U also can use crossover as functions from `Crossover` class:
     * `Crossover.one_point()`
     * `Crossover.two_point()`
     * `Crossover.uniform()`
     * `Crossover.uniform_window(window = 7)`
     * `Crossover.shuffle()`
     * `Crossover.segment()`
-    * `Crossover.mixed(alpha = 0.5)` only for real variables
-    * `Crossover.arithmetic()` only for real variables
+    * `Crossover.mixed(alpha = 0.5)` -- only for real variables
+    * `Crossover.arithmetic()` -- only for real variables
     
     Have a look at [crossovers' logic](#available-crossovers)
 
-    If u want, write your own crossover function using syntax:
+    If u want, write your own crossover function using simple syntax:
     ```python
-    def my_crossover(parent_a, parent_b):
+    def my_crossover(parent_a: np.ndarray, parent_b: np.ndarray):
         # some code
         return child_1, child_2
     ```
-* **mutation_type**: there are several options (only for real) including `uniform_by_x`, `uniform_by_center`, `gauss_by_x`, `gauss_by_center`; default is `uniform_by_center`. U also can use mutation functions from `Mutations` class:
+* **mutation_type**: there are several options (only for real variables) including `'uniform_by_x'`, `'uniform_by_center'`, `'gauss_by_x'`, `'gauss_by_center'`; default is `'uniform_by_center'`. U also can use mutation as functions from `Mutations` class:
     * `Mutations.gauss_by_center(sd = 0.2)`
     * `Mutations.gauss_by_x(sd = 0.1)`
     * `Mutations.uniform_by_center()`
@@ -541,11 +487,11 @@ If this parameter's value is `None` the algorithm sets maximum number of iterati
 
     (If u want) write your mutation function using syntax:
     ```python
-    def my_mutation(current_value, left_border, right_border):
+    def my_mutation(current_value: float, left_border: float, right_border: float):
         # some code
         return new_value 
     ```
-* **selection_type**: there are several options (only for real) including `fully_random`, `roulette`, `stochastic`, `sigma_scaling`, `ranking`, `linear_ranking`, `tournament`; default is `roulette`. U also can use selection functions from `Selection` class:
+* **selection_type**: there are several options (only for real) including `'fully_random'` (just for fun), `'roulette'`, `'stochastic'`, `'sigma_scaling'`, `'ranking'`, `'linear_ranking'`, `'tournament'`; default is `roulette`. U also can use selection as functions from `Selection` class:
     * `Selection.fully_random()`
     * `Selection.roulette()`
     * `Selection.stochastic()`
@@ -556,18 +502,99 @@ If this parameter's value is `None` the algorithm sets maximum number of iterati
 
     If u want, write your selection function using syntax:
     ```python
-    def my_mutation(sorted_scores, parents_count):
+    def my_mutation(sorted_scores: np.ndarray, parents_count: int):
         # some code
         return array_of_parents_indexes 
     ```
-![](tests/selections.png)
+![](tests/output/selections.png)
+
+## Methods and Properties of model:
+
+The main method if **run()**. It has parameters:
+
+* **no_plot** (`bool`) - do not plot results using matplotlib by default
+
+* **disable_progress_bar** (`bool`) - do not show progress bar (also it can be faster by 10-20 seconds)
+
+* **disable_printing** (`bool`) - don't print any text (except progress bar)
+
+* **set_function** (`Optional[Callable[[np.ndarray], np.ndarray]]`): 2D-array -> 1D-array function, which applies to matrix of population (size (samples, dimension)) to estimate their values ("scores" in some sense)
+        
+* **apply_function_to_parents** (`bool`) - apply function to parents from previous generation (if it's needed), it can be needed at working with games agents, but for other tasks will just waste time
+
+* **start_generation** (`Union[str, Dict[str, np.ndarray], Generation, np.ndarray, Tuple[Optional[np.ndarray], Optional[np.ndarray]]]`) -- one of cases ([take a look](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)):
+  *  `Generation` object
+  *  dictionary with structure `{'variables':2D-array of samples, 'scores': function values on samples}` (if `'scores'` value is `None` the scores will be compute)
+  *  path to `.npz` file (`str`) with saved generation  
+  *  `np.ndarray` (with shape `(samples, dim)` or `(samples, dim+1)`) 
+  *  tuple of `np.ndarray`s / `None`. 
+
+* **studEA** (`bool`) - using stud EA strategy (crossover with best object always). Default is false. [Take a look](#standard-crossover-vs-stud-ea-crossover)
+* **mutation_indexes** (`Optional[Union[Sequence[int], Set[int]]]`) - indexes of dimensions where mutation can be performed (all dimensions by default). [Example](tests/mut_indexes.py)
+
+* **init_creator**: (`Optional[Callable[[], np.ndarray]]`), the function creates population samples. By default -- random uniform for real variables and random uniform for int. [Example](#optimization-with-oppositions)
+* **init_oppositors**: (`Optional[Sequence[Callable[[np.ndarray], np.ndarray]]]`) -- the list of oppositors creates oppositions for base population. No by default. [Example](#optimization-with-oppositions)
+* **duplicates_oppositor**: `Optional[Callable[[np.ndarray], np.ndarray]]`, oppositor for applying after duplicates removing. By default -- using just random initializer from creator. [Example](#duplicates-removing)
+* **remove_duplicates_generation_step**: `None/int`, step for removing duplicates (have a sense with discrete tasks). No by default. [Example](#duplicates-removing)
+* **revolution_oppositor** = `Optional[Callable[[np.ndarray], np.ndarray]]`, oppositor for revolution time. No by default. [Example](#revolutions)
+* **revolution_after_stagnation_step** = `None/int`, create revolution after this generations of stagnation. No by default. [Example](#revolutions)
+* **revolution_part** (`float`): the part of generation to being oppose. By default is 0.3. [Example](#revolutions)
+
+* **population_initializer** (`Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]]`) -- object for actions at population initialization step to create better start population. [Take a look](#creating-better-start-population)
+
+* **stop_when_reached** (`Optional[float]`) -- stop searching after reaching this value (it can be potential minimum or something else)
+
+* **callbacks** (`Optional[Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]]]`) - list of callback functions with structure:
+  ```python 
+  def callback(generation_number, report_list, last_population_as_2D_array, last_population_scores_as_1D_array):
+      #
+      # do some action
+      #
+  ```
+    See [example of using callbacks](tests/callbacks.py). There are several callbacks in `Callbacks` class, such as:
+    * `Callbacks.SavePopulation(folder, save_gen_step = 50, file_prefix = 'population')`
+    * `Callbacks.PlotOptimizationProcess(folder, save_gen_step = 50, show = False, main_color = 'green', file_prefix = 'report')`
+
+* **middle_callbacks** (`Sequence`) - list of functions made `MiddleCallbacks` class (large opportunity, please, have a look at [this](#middle-callbacks)) 
+
+
+* **time_limit_secs** (`Optional[float]`) - limit time of working (in seconds). If `None`, there is no time limit (limit only for count of generation and so on). See [little example of using](tests/time_limit.py). Also there is simple conversion function for conversion some time in seconds:
+  ```python
+  from truefalsepython import time_to_seconds
+
+  total_seconds = time_to_seconds(
+      days = 2, # 2 days
+      hours = 13, # plus 13 hours
+      minutes = 7, # plus 7 minutes
+      seconds = 44 # plus 44 seconds
+  )
+  ```
+
+* **save_last_generation_as** (`Optional[str]`) - path to `.npz` file for saving last_generation as numpy dictionary like `{'population': 2D-array, 'scores': 1D-array}`, `None` if doesn't need to save in file; [take a look](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)
+
+* **seed** (`Optional[int]`) - random seed (None is doesn't matter)
+
+It would be more logical to use params like `studEA` as an algorithm param, but `run()`-way can be more comfortable for real using.
+
+    
+**output**:  
+  
+* `result`: is a wrap on last generation with fields:
+  * `last_generation` -- `Generation` object of last generation
+  * `variable` -- best unit of last generation
+  * `score` -- metric of the best unit
+* `report`: is a record of the progress of the algorithm over iterations. There are also `report_average` and `report_min` fields which are the average and min generation values by each generation
+
+
+
 
 # Examples for begginer
 
 ## A minimal example 
-Assume we want to find a set of `X = (x1,x2,x3)` that minimizes function `f(X)=x1+x2+x3` where `X` can be any real number in \[0,10\].
+Assume we want to find a set of `X = (x1,x2,x3)` that minimizes function `f(X) = x1 + x2 + x3` where `X` can be any real number in `[0, 10]`.
 
-This is a trivial problem and we already know that the answer is `X=(0,0,0)` where `f(X)=0`.  
+This is a trivial problem and we already know that the answer is `X = (0,0,0)` where `f(X) = 0`.  
+
 We just use this simple example to see how to implement geneticalgorithm2. First we import geneticalgorithm2 and [numpy](https://numpy.org). Next, we define 
 function `f` which we want to minimize and the boundaries of the decision variables. Then simply geneticalgorithm2 is called to solve the defined optimization problem as follows:
 
@@ -579,27 +606,20 @@ def f(X):
     return np.sum(X)
     
     
-varbound = np.array([[0,10]]*3)
+varbound = [[0,10]]*3
 
 model = ga(function=f, dimension=3, variable_type='real', variable_boundaries=varbound)
 
 model.run()
 ```
 
-Notice that we define the function f so that its output is the 
-objective function we want to minimize where the input is the set of X (decision variables).
-The boundaries for variables must be defined as a `numpy array` and for each 
-variable we need a separate boundary. Here I have three variables and all of 
-them have the same boundaries (For the case the boundaries are different see the example with mixed variables). 
- 
-
     
 **geneticalgorithm2 has some arguments**:   
-1. Obviously the first argument is the function `f` we already defined (for more details about the argument and output see [Function](#1111-id)).  
-1. Our problem has three variables so we set dimension equal three.   
-1. Variables are real (continuous) so we use string 'real' to notify the type of 
-variables (geneticalgorithm2 accepts other types including Boolean, Integers and 
-Mixed; see other examples).  
+1. Obviously the first argument is the function `f` we already defined.  
+2. Our problem has three variables so we set dimension equal `3`.   
+3. Variables are real (continuous) so we use string `'real'` to notify the type of 
+variables (geneticalgorithm2 accepts other types including boolean, integers and 
+mixed; see other examples).  
 1. Finally, we input `varbound` which includes the boundaries of the variables. 
 Note that the length of variable_boundaries must be equal to dimension.
   
@@ -614,16 +634,13 @@ To do so we complete the code as follows:
 ```python
 convergence = model.report
 
-solution = model.output_dict
+solution = model.result
 ```
-
-**output_dict** is a dictionary including the best set of variables found and the value of the given function associated to it (`{'variable': , 'function': , 'last_generation': }`). 
-**report** is a list including the convergence of the algorithm over iterations
 
 ## The simple example with integer variables
 
 Considering the problem given in the simple example above.
-Now assume all variables are integers. So `x1, x2, x3` can be any integers in \[0,10\].
+Now assume all variables are integers. So `x1, x2, x3` can be any integers in `[0, 10]`.
 In this case the code is as the following:
 
 ```python
@@ -634,18 +651,18 @@ def f(X):
     return np.sum(X)
     
     
-varbound = np.array([[0,10]]*3)
+varbound = [[0,10]]*3
 
 model = ga(function=f, dimension=3, variable_type='int', variable_boundaries=varbound)
 
 model.run()
 ```
-So, as it is seen the only difference is that for variable_type we use string 'int'. 
+So, as it is seen the only difference is that for `variable_type` we use string `'int'`. 
 
 ## The simple example with Boolean variables
 
 Considering the problem given in the simple example above.
-Now assume all variables are Boolean instead of real or integer. So `X` can be either zero or one. Also instead of three let's have 30 variables.
+Now assume all variables are boolean instead of real or integer. So `X` can be either zero or one. Also instead of three let's have 30 variables.
 In this case the code is as the following:
 
 ```python
@@ -654,21 +671,20 @@ from geneticalgorithm2 import geneticalgorithm2 as ga
 
 def f(X):
     return np.sum(X)
-    
 
 model = ga(function=f, dimension=30, variable_type='bool')
 
 model.run()
 ```
 
-Note for variable_type we use string 'bool' when all variables are Boolean.  
-Note that when variable_type equal 'bool' there is no need for variable_boundaries to be defined.
+Note for variable_type we use string `'bool'` when all variables are boolean.  
+Note that when variable_type equal `'bool'` there is no need for `variable_boundaries` to be defined.
 
 ## The simple example with mixed variables
 
-Considering the problem given in the the simple example above where we want to minimize `f(X)=x1+x2+x3`. 
-Now assume `x1` is a real (continuous) variable in \[0.5,1.5\], `x2` is an integer variable in \[1,100\], and `x3` is a Boolean variable that can be either zero or one.
-We already know that the answer is `X=(0.5,1,0)` where `f(X)=1.5`
+Considering the problem given in the the simple example above where we want to minimize `f(X) = x1 + x2 + x3`. 
+Now assume `x1` is a real (continuous) variable in `[0.5,1.5]`, `x2` is an integer variable in `[1,100]`, and `x3` is a boolean variable that can be either zero or one.
+We already know that the answer is `X = (0.5,1,0)` where `f(X) = 1.5`
 We implement geneticalgorithm2 as the following:
 
 ```python
@@ -678,19 +694,15 @@ from geneticalgorithm2 import geneticalgorithm2 as ga
 def f(X):
     return np.sum(X)
     
-varbound = np.array([[0.5,1.5],[1,100],[0,1]])
-vartype = np.array(['real','int','int'])
-model = ga(function=f, dimension=3, variable_type_mixed=vartype, variable_boundaries=varbound)
+varbound = [[0.5,1.5],[1,100],[0,1]]
+vartype = ('real', 'int', 'int')
+model = ga(function=f, dimension=3, variable_type=vartype, variable_boundaries=varbound)
 
 model.run()
 ```
 
-Note that for mixed variables we need to define boundaries also we need to make a `numpy array` of variable types as above (`vartype`). Obviously the order of variables in both arrays must match. Also notice that in such a case for Boolean variables we use string 'int' and boundary \[0,1\].  
-Notice that we use argument `variable_type_mixed` to input a `numpy array` of variable types for functions with mixed variables.
-
-
 ## Optimization problems with constraints
-In all above examples, the optimization problem was unconstrained. Now consider that we want to minimize `f(X)=x1+x2+x3` where `X` is a set of real variables in \[0,10\]. Also we have an extra constraint so that sum of `x1` and `x2` is equal or greater than 2. The minimum of `f(X)` is 2.
+In all above examples, the optimization problem was unconstrained. Now consider that we want to minimize `f(X) = x1+x2+x3` where `X` is a set of real variables in `[0, 10]`. Also we have an extra constraint so that sum of `x1` and `x2` is equal or greater than 2. The minimum of `f(X)` is 2.
 In such a case, a trick is to define penalty function. Hence we use the code below:
 
 ```python
@@ -703,7 +715,7 @@ def f(X):
         pen=500+1000*(2-X[0]-X[1])
     return np.sum(X)+pen
     
-varbound=np.array([[0,10]]*3)
+varbound=[[0,10]]*3
 
 model=ga(function=f,dimension=3,variable_type='real',variable_boundaries=varbound)
 
@@ -713,18 +725,20 @@ model.run()
 As seen above we add a penalty to the objective function whenever the constraint is not met.  
 
 Some hints about how to define a penalty function:  
+
 1. Usually you may use a constant greater than the maximum possible value of the objective function if the maximum is known or if we have a guess of that. Here the highest possible value of our function is 300 (i.e. if all variables were 10, `f(X)=300`). So I chose a constant of 500. So, if a trial solution is not in the feasible region even though its objective function may be small, the penalized objective function (fitness function) is worse than any feasible solution.
 2. Use a coefficient big enough and multiply that by the amount of violation. This helps the algorithm learn how to approach feasible domain.
 3. How to define penalty function usually influences the convergence rate of an evolutionary algorithm. In my [book on metaheuristics and evolutionary algorithms](https://www.wiley.com/en-us/Meta+heuristic+and+Evolutionary+Algorithms+for+Engineering+Optimization-p-9781119386995) you can learn more about that. 
 4. Finally after you solved the problem test the solution to see if boundaries are met. If the solution does not meet constraints, it shows that a bigger penalty is required. However, in problems where optimum is exactly on the boundary of the feasible region (or very close to the constraints) which is common in some kinds of problems, a very strict and big penalty may prevent the genetic algorithm to approach the optimal region. In such a case designing an appropriate penalty function might be more challenging. Actually what we have to do is to design a penalty function that let the algorithm searches unfeasible domain while finally converge to a feasible solution. Hence you may need more sophisticated penalty functions. But in most cases the above formulation work fairly well.
 
-## Select fixed count of objects from set
+## Middle example: select fixed count of objects from set
 
-For some task u need think a lot and create good specific crossover or mutation functions. For example, take a look at this problem:
+For some task u need to think a lot and create good specific crossover or mutation functions. For example, take a look at this problem:
 
     From set like X = {x1, x2, x3, ..., xn} u should select only k objects which get the best function value
 
 U can do it using this code:
+
 ```python
 import numpy as np
 from geneticalgorithm2 import geneticalgorithm2 as ga
@@ -785,7 +799,7 @@ model = ga(function=f,
                }
            )
 
-model.run(no_plot = False, start_generation={'variables': start_generation, 'scores': None})
+model.run(no_plot = False, start_generation=(start_generation, None))
 ```
 
 # U should know these features
@@ -845,9 +859,11 @@ For two example parents (*one with ones* and *one with zeros*) next crossovers w
 
 ## Function timeout
 
-geneticalgorithm2 is designed such that if the given function does not provide
+**geneticalgorithm2** is designed such that if the given function does not provide
 any output before timeout (the default value is 10 seconds), the algorithm
-would be terminated and raise the appropriate error. In such a case make sure the given function
+would be terminated and raise the appropriate error. 
+
+In such a case make sure the given function
 works correctly (i.e. there is no infinite loop in the given function). Also if the given function takes more than 10 seconds to complete the work
 make sure to increase function_timeout in arguments.
 
@@ -855,21 +871,21 @@ make sure to increase function_timeout in arguments.
 
 The convergence curve of an elitist genetic algorithm is always non-increasing. So, the best ever found solution is equal to the best solution of the last iteration. However, the convergence curve of a standard genetic algorithm is different. If `elit_ratio` is zero geneticalgroithm2 implements a standard GA. The output of geneticalgorithm2 for standard GA is the best ever found solution not the solution of the last iteration. The difference between the convergence curve of standard GA and elitist GA is shown below:
 
-![](tests/standard_vs_elitist.png)
+![](tests/output/standard_vs_elitist.png)
 
 ## Standard crossover vs. stud EA crossover
 
 [Stud EA](https://link.springer.com/chapter/10.1007%2FBFb0056910) is the idea of using crossover always with best object. So one of two parents is always the best object of population. It can help us in a lot of tasks!
 
-![](tests/studEA.png)
+![](tests/output/studEA.png)
 
 ## Creating better start population
 
 There is `Population_initializer(select_best_of = 4, local_optimization_step = 'never', local_optimizer = None)` object for creating better start population. It has next arguments:
 
-* `select_best_of` (int) -- select 1/`select_best_of` best part of start population. For example, for `select_best_of` = 4 and `population_size` = N will be selected N best objects from 5N generated objects (if `start_generation` = None dictionary). If `start_generation` is not None dictionary, it will be selected best size(`start_generation`)/N  objects
+* `select_best_of` (`int`) -- select `1/select_best_of` best part of start population. For example, for `select_best_of = 4` and `population_size = N` will be selected N best objects from 5N generated objects (if `start_generation = None`). If `start_generation` is not None, it will be selected best `size(start_generation)/N`  objects
 
-* `local_optimization_step` (str) -- when should we do local optimization? Available values:
+* `local_optimization_step` (`str`) -- when should we do local optimization? Available values:
     
     * `'never'` -- don't do local optimization
     * `'before_select'` -- before selection best N objects (example: do local optimization for 5N objects and select N best results)
@@ -886,7 +902,7 @@ There is `Population_initializer(select_best_of = 4, local_optimization_step = '
 
 This little option can help u especially with multimodal tasks. 
 
-![](tests/init_best_of.png)
+![](tests/output/init_best_of.png)
 
 ### Do local optimization
 
@@ -910,7 +926,7 @@ def f(arr):
 
 iterations = 100    
     
-varbound = np.array([[-100, 100]]*15)
+varbound = [[-100, 100]]*15
 
 available_values = [np.arange(-100, 101)]*15
 
@@ -945,26 +961,26 @@ plt.title('Selection best N object before running GA')
 plt.legend()
 ```
 
-![](tests/init_local_opt.png)
+![](tests/output/init_local_opt.png)
 
 ### Optimization with oppositions
 
 Also u can create start population with [oppositions](https://github.com/PasaOpasen/opp-op-pop-init). See [example of code](tests/best_of_N_with_opp.py)
 
-![](tests/init_best_of_opp.png)
+![](tests/output/init_best_of_opp.png)
 
 ## Revolutions
 
 U can create [revolutions in your population](https://github.com/PasaOpasen/opp-op-pop-init) after some stagnation steps. It really can help u for some tasks. See [example](tests/revolution.py)
 
-![](tests/revolution.png)
+![](tests/output/revolution.png)
 
 
 ## Duplicates removing
 
 If u remove duplicates each `k` generations, u can speed up the optimization process ([example](tests/remove_dups.py))
 
-![](tests/remove_dups.png)
+![](tests/output/remove_dups.png)
 
 ## Cache
 
@@ -1096,81 +1112,79 @@ The code for optimizations process is same for each function and is contained [i
 
 ### [Sphere](https://github.com/PasaOpasen/OptimizationTestFunctions#sphere)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20Sphere.png)
-![](tests/Optimization%20process%20for%20Sphere.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20Sphere.png)
 
 ### [Ackley](https://github.com/PasaOpasen/OptimizationTestFunctions#ackley)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20Ackley.png)
-![](tests/Optimization%20process%20for%20Ackley.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20Ackley.png)
 
 ### [AckleyTest](https://github.com/PasaOpasen/OptimizationTestFunctions#ackleytest)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20AckleyTest.png)
-![](tests/Optimization%20process%20for%20AckleyTest.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20AckleyTest.png)
 
 ### [Rosenbrock](https://github.com/PasaOpasen/OptimizationTestFunctions#rosenbrock)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20Rosenbrock.png)
-![](tests/Optimization%20process%20for%20Rosenbrock.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20Rosenbrock.png)
 
 ### [Fletcher](https://github.com/PasaOpasen/OptimizationTestFunctions#fletcher)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20Fletcher.png)
-![](tests/Optimization%20process%20for%20Fletcher.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20Fletcher.png)
 
 ### [Griewank](https://github.com/PasaOpasen/OptimizationTestFunctions#griewank)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20Griewank.png)
-![](tests/Optimization%20process%20for%20Griewank.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20Griewank.png)
 
 ### [Penalty2](https://github.com/PasaOpasen/OptimizationTestFunctions#penalty2)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20Penalty2.png)
-![](tests/Optimization%20process%20for%20Penalty2.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20Penalty2.png)
 
 ### [Quartic](https://github.com/PasaOpasen/OptimizationTestFunctions#quartic)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20Quartic.png)
-![](tests/Optimization%20process%20for%20Quartic.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20Quartic.png)
 
 ### [Rastrigin](https://github.com/PasaOpasen/OptimizationTestFunctions#rastrigin)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20Rastrigin.png)
-![](tests/Optimization%20process%20for%20Rastrigin.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20Rastrigin.png)
 
 ### [SchwefelDouble](https://github.com/PasaOpasen/OptimizationTestFunctions#schwefeldouble)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20SchwefelDouble.png)
-![](tests/Optimization%20process%20for%20SchwefelDouble.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20SchwefelDouble.png)
 
 ### [SchwefelMax](https://github.com/PasaOpasen/OptimizationTestFunctions#schwefelmax)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20SchwefelMax.png)
-![](tests/Optimization%20process%20for%20SchwefelMax.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20SchwefelMax.png)
 
 ### [SchwefelAbs](https://github.com/PasaOpasen/OptimizationTestFunctions#schwefelabs)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20SchwefelAbs.png)
-![](tests/Optimization%20process%20for%20SchwefelAbs.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20SchwefelAbs.png)
 
 ### [SchwefelSin](https://github.com/PasaOpasen/OptimizationTestFunctions#schwefelsin)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20SchwefelSin.png)
-![](tests/Optimization%20process%20for%20SchwefelSin.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20SchwefelSin.png)
 
 ### [Stairs](https://github.com/PasaOpasen/OptimizationTestFunctions#stairs)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20Stairs.png)
-![](tests/Optimization%20process%20for%20Stairs.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20Stairs.png)
 
 ### [Abs](https://github.com/PasaOpasen/OptimizationTestFunctions#abs)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20Abs.png)
-![](tests/Optimization%20process%20for%20Abs.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20Abs.png)
 
 ### [Michalewicz](https://github.com/PasaOpasen/OptimizationTestFunctions#michalewicz)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20Michalewicz.png)
-![](tests/Optimization%20process%20for%20Michalewicz.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20Michalewicz.png)
 
 ### [Scheffer](https://github.com/PasaOpasen/OptimizationTestFunctions#scheffer)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20Scheffer.png)
-![](tests/Optimization%20process%20for%20Scheffer.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20Scheffer.png)
 
 ### [Eggholder](https://github.com/PasaOpasen/OptimizationTestFunctions#eggholder)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20Eggholder.png)
-![](tests/Optimization%20process%20for%20Eggholder.png)
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20Eggholder.png)
 
 ### [Weierstrass](https://github.com/PasaOpasen/OptimizationTestFunctions#weierstrass)
 ![](https://github.com/PasaOpasen/OptimizationTestFunctions/blob/main/tests/heatmap%20for%20Weierstrass.png)
-![](tests/Optimization%20process%20for%20Weierstrass.png)
-
-
+![](tests/output/opt_test_funcs/Optimization%20process%20for%20Weierstrass.png)
 
 
 
@@ -1234,7 +1248,7 @@ def f(X):
     return 50*np.sum(X) - np.sum(np.sqrt(X)*np.sin(X))
     
 dim = 25
-varbound = np.array([[0,10]]*dim)
+varbound = [[0,10]]*dim
 
 # create start population
 start_pop = np.random.uniform(0, 10, (50, dim))
@@ -1258,9 +1272,9 @@ model.plot_results(save_as = 'plot_scores_process.png')
 # plot scores of last population
 model.plot_generation_scores(title = 'Population scores after ending of searching', save_as= 'plot_scores_end.png')
 ```
-![](tests/plot_scores_start.png)
-![](tests/plot_scores_process.png)
-![](tests/plot_scores_end.png)
+![](tests/output/plot_scores_start.png)
+![](tests/output/plot_scores_process.png)
+![](tests/output/plot_scores_end.png)
 
 
 
