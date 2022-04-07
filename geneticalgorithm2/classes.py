@@ -26,10 +26,20 @@ class DictLikeGetSet:
 
 
 
-_algorithm_params_slots = {'max_num_iteration','max_iteration_without_improv',
-                 'population_size','mutation_probability','elit_ratio','crossover_probability','parents_portion',
-    'crossover_type','mutation_type','selection_type'}
-
+_algorithm_params_slots = {
+    'max_num_iteration',
+    'max_iteration_without_improv',
+    'population_size',
+    'mutation_probability',
+    'mutation_discrete_probability',
+    'elit_ratio',
+    'crossover_probability',
+    'parents_portion',
+    'crossover_type',
+    'mutation_type',
+    'mutation_discrete_type',
+    'selection_type'
+}
 
 @dataclass
 class AlgorithmParams(DictLikeGetSet):
@@ -40,15 +50,16 @@ class AlgorithmParams(DictLikeGetSet):
     population_size: int = 100
 
     mutation_probability: float = 0.1
-    elit_ratio: float = 0.01
+    mutation_discrete_probability: Optional[float] = None
     crossover_probability: float = 0.5
+
+    elit_ratio: float = 0.01
     parents_portion: float = 0.3
 
     crossover_type: Union[str, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]] = 'uniform'
     mutation_type: Union[str, Callable[[float, float, float], float]] = 'uniform_by_center'
+    mutation_discrete_type: Union[str, Callable[[int, int, int], int]] = 'uniform_discrete'
     selection_type: Union[str, Callable[[np.ndarray, int], np.ndarray]] = 'roulette'
-
-
 
     def _check_if_valid(self):
 
@@ -62,72 +73,36 @@ class AlgorithmParams(DictLikeGetSet):
             warnings.warn(f"max_iteration_without_improv is {self.max_iteration_without_improv} but must be None or int > 0")
             self.max_iteration_without_improv = None
 
+    def get_CMS_funcs(self) -> Tuple[
+        Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]],
+        Callable[[float, float, float], float],
+        Callable[[int, int, int], int],
+        Callable[[np.ndarray, int], np.ndarray]
+    ]:
+        """
+        returns gotten crossover, mutation, discrete mutation, selection
+        as necessary functions
+        """
 
+        result = []
+        for name, value, dct in (
+            ('crossover', self.crossover_type, Crossover.crossovers_dict()),
+            ('mutation', self.mutation_type, Mutations.mutations_dict()),
+            ('mutation_discrete', self.mutation_discrete_type, Mutations.mutations_discrete_dict()),
+            ('selection', self.selection_type, Selection.selections_dict())
+        ):
 
-
-
-    def get_CMS(self):
-
-        crossover = self.crossover_type
-        mutation = self.mutation_type
-        selection = self.selection_type
-
-        C, M, S = None, None, None
-
-        if type(crossover) == str:
-            if crossover == 'one_point':
-                C = Crossover.one_point()
-            elif crossover == 'two_point':
-                C = Crossover.two_point()
-            elif crossover == 'uniform':
-                C = Crossover.uniform()
-            elif crossover == 'segment':
-                C = Crossover.segment()
-            elif crossover == 'shuffle':
-                C = Crossover.shuffle()
+            if type(value) == str:
+                if value not in dct:
+                    raise Exception(
+                        f"unknown name of {name}: '{value}', must be from {tuple(dct.keys())} or a custom function"
+                    )
+                result.append(dct[value])
             else:
-                raise Exception(f"unknown type of crossover: {crossover}")
-        else:
-            C = crossover
+                assert callable(value), f"{name} must be string or callable"
+                result.append(value)
 
-        if type(mutation) == str:
-            if mutation == 'uniform_by_x':
-                M = Mutations.uniform_by_x()
-            elif mutation == 'uniform_by_center':
-                M = Mutations.uniform_by_center()
-            elif mutation == 'gauss_by_center':
-                M = Mutations.gauss_by_center()
-            elif mutation == 'gauss_by_x':
-                M = Mutations.gauss_by_x()
-            else:
-                raise Exception(f"unknown type of mutation: {mutation}")
-        else:
-            M = mutation
-
-        if type(selection) == str:
-            if selection == 'fully_random':
-                S = Selection.fully_random()
-            elif selection == 'roulette':
-                S = Selection.roulette()
-            elif selection == 'stochastic':
-                S = Selection.stochastic()
-            elif selection == 'sigma_scaling':
-                S = Selection.sigma_scaling()
-            elif selection == 'ranking':
-                S = Selection.ranking()
-            elif selection == 'linear_ranking':
-                S = Selection.linear_ranking()
-            elif selection == 'tournament':
-                S = Selection.tournament()
-            else:
-                raise Exception(f"unknown type of selection: {selection}")
-        else:
-            S = selection
-
-        return C, M, S
-
-
-
+        return tuple(result)
 
 
     @staticmethod
@@ -235,8 +210,8 @@ class Generation(DictLikeGetSet):
     @staticmethod
     def from_pop_matrix(pop: np.ndarray):
         return Generation(
-            variables = pop[:, :-1],
-            scores = pop[:, -1]
+            variables=pop[:, :-1],
+            scores=pop[:, -1]
         )
 
 
@@ -269,9 +244,11 @@ class MiddleCallbackData(DictLikeGetSet):
     report_list: List[float]
 
     mutation_prob: float
+    mutation_discrete_prob: float
     crossover_prob: float
 
     mutation: Callable[[float, float, float], float]
+    mutation_discrete: Callable[[int, int, int], int]
     crossover: Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]
     selection: Callable[[np.ndarray, int], np.ndarray]
 

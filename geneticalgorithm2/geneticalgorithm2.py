@@ -123,6 +123,7 @@ class geneticalgorithm2:
             @ parents_portion <float in [0,1]>
             @ crossover_type <string/function> - Default is 'uniform'; 'one_point' or 'two_point' (not only) are other options
             @ mutation_type <string/function> - Default is 'uniform_by_x'; see GitHub to check other options
+            @ mutation_discrete_type <string/function> - mutation type for discrete variables
             @ selection_type <string/function> - Default is 'roulette'; see GitHub to check other options
             @ max_iteration_without_improv <int> - maximum number of successive iterations without improvement. If None it is ineffective
 
@@ -139,9 +140,9 @@ class geneticalgorithm2:
             algorithm_parameters = AlgorithmParams.from_dict(algorithm_parameters)
 
         algorithm_parameters._check_if_valid()
-        self.crossover, self.real_mutation, self.selection = algorithm_parameters.get_CMS()
+        self.crossover, self.real_mutation, self.discrete_mutation, self.selection = algorithm_parameters.get_CMS_funcs()
 
-        self.param = algorithm_parameters # if type(algorithm_parameters) == AlgorithmParams else AlgorithmParams.from_dict(algorithm_parameters)
+        self.param: AlgorithmParams = algorithm_parameters # if type(algorithm_parameters) == AlgorithmParams else AlgorithmParams.from_dict(algorithm_parameters)
 
         #############################################################
         # input function
@@ -152,9 +153,8 @@ class geneticalgorithm2:
 
         #############################################################
         #dimension
-        
         self.dim = int(dimension)
-
+        assert self.dim > 0, f"dimension count must be int and >0, gotten {dimension}"
 
         if variable_type_mixed is not None:
             warnings.warn(
@@ -168,14 +168,18 @@ class geneticalgorithm2:
         ############################################################# 
 
         
-        self.pop_s = int(self.param['population_size'])
-        self.__set_par_s(self.param['parents_portion'])
-        
-        self.prob_mut = self.param['mutation_probability']
-        self.prob_cross=self.param['crossover_probability']
+        self.pop_s = int(self.param.population_size)
+        self.__set_par_s(self.param.parents_portion)
 
-        self.__set_elit(self.pop_s, self.param['elit_ratio'])
-        assert(self.par_s>=self.num_elit), "\n number of parents must be greater than number of elits"
+        assert can_be_prob(self.param.mutation_probability)
+        self.prob_mut = self.param.mutation_probability
+        assert self.param.mutation_discrete_probability is None or can_be_prob(self.param.mutation_discrete_probability)
+        self.prob_mut_discrete = self.param.mutation_discrete_probability or self.prob_mut
+
+        self.prob_cross = self.param.crossover_probability
+
+        self.__set_elit(self.pop_s, self.param.elit_ratio)
+        assert(self.par_s >= self.num_elit), "\n number of parents must be greater than number of elits"
 
         self.__set_max_iterations()
 
@@ -236,7 +240,7 @@ class geneticalgorithm2:
                 assert len(variable_boundaries) == self.dim and all((len(t) == 2 for t in variable_boundaries)), "\n if variable_boundaries is sequence, it must be with len dim and boundary for each variable must be a tuple of length two"
 
             for i in variable_boundaries:
-                assert(i[0]<=i[1]), "\n lower_boundaries must be smaller than upper_boundaries [lower,upper]"
+                assert(i[0] <= i[1]), "\n lower_boundaries must be smaller than upper_boundaries [lower,upper]"
 
             self.var_bound = np.array(variable_boundaries)
 
@@ -407,8 +411,10 @@ class geneticalgorithm2:
                 report_list=self.report,
 
                 mutation_prob=self.prob_mut,
+                mutation_discrete_prob=self.prob_mut_discrete,
                 crossover_prob=self.prob_cross,
                 mutation=self.real_mutation,
+                mutation_discrete=self.discrete_mutation,
                 crossover=self.crossover,
                 selection=self.selection,
 
@@ -433,12 +439,14 @@ class geneticalgorithm2:
             self.param.parents_portion = data.parents_portion
             self.__set_par_s(data.parents_portion)
 
-            self.param.elit_ratio= data.elit_ratio
+            self.param.elit_ratio = data.elit_ratio
             self.__set_elit(self.pop_s, data.elit_ratio)
 
             self.prob_mut = data.mutation_prob
+            self.prob_mut_discrete = data.mutation_discrete_prob
             self.prob_cross = data.crossover_prob
             self.real_mutation = data.mutation
+            self.discrete_mutation = data.mutation_discrete
             self.crossover = data.crossover
             self.selection = data.selection
 
@@ -868,9 +876,9 @@ class geneticalgorithm2:
         """
 
         for i in self.indexes_int_mut:
-            if random.random() < self.prob_mut:
+            if random.random() < self.prob_mut_discrete:
                 bounds = self.var_bound[i]
-                x[i] = random.randint(bounds[0], bounds[1])
+                x[i] = self.discrete_mutation(x[i], bounds[0], bounds[1])
 
         for i in self.indexes_float_mut:                
             if random.random() < self.prob_mut:
@@ -885,7 +893,7 @@ class geneticalgorithm2:
         """
         for i in self.indexes_int_mut:
 
-            if random.random() < self.prob_mut:
+            if random.random() < self.prob_mut_discrete:
                 v1, v2 = p1[i], p2[i]
                 if v1 < v2:
                     x[i] = random.randint(v1, v2)

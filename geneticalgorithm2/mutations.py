@@ -11,18 +11,33 @@ from .utils import min_fast, max_fast
 class Mutations:
 
     @staticmethod
+    def mutations_dict():
+        return {
+            'uniform_by_x': Mutations.uniform_by_x(),
+            'uniform_by_center': Mutations.uniform_by_center(),
+            'gauss_by_center': Mutations.gauss_by_center(),
+            'gauss_by_x': Mutations.gauss_by_x(),
+        }
+    @staticmethod
+    def mutations_discrete_dict():
+        return {
+            'uniform_discrete': Mutations.uniform_discrete()
+        }
+
+
+    @staticmethod
     def uniform_by_x():
         
         def func(x: float, left: float, right: float):
             alp = min_fast(x - left, right - x)
-            return np.random.uniform(x - alp, x + alp)
+            return random.uniform(x - alp, x + alp)
         return func
 
     @staticmethod
     def uniform_by_center():
         
         def func(x: float, left: float, right: float):
-            return np.random.uniform(left, right)
+            return random.uniform(left, right)
         
         return func
 
@@ -47,3 +62,10 @@ class Mutations:
             return max_fast(left, min_fast(right, np.random.normal(loc = (left+right)*0.5, scale = std)))
         
         return func
+
+    @staticmethod
+    def uniform_discrete():
+        def func(x: int, left: int, right: int):
+            return random.randint(left, right)
+        return func
+
