@@ -311,7 +311,7 @@ class geneticalgorithm2:
         studEA: bool = False,
         mutation_indexes: Optional[Union[Sequence[int], Set[int]]] = None,
 
-        init_creator: Optional[Callable[[], np.ndarray]] = None,#+
+        init_creator: Optional[Callable[[], np.ndarray]] = None,
         init_oppositors: Optional[Sequence[Callable[[np.ndarray], np.ndarray]]] = None,
 
         duplicates_oppositor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
@@ -321,7 +321,7 @@ class geneticalgorithm2:
         revolution_after_stagnation_step: Optional[int] = None,
         revolution_part: float = 0.3,
 
-        population_initializer: Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]] = Population_initializer(select_best_of = 1, local_optimization_step = 'never', local_optimizer = None),  #+
+        population_initializer: Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]] = Population_initializer(select_best_of = 1, local_optimization_step = 'never', local_optimizer = None),
 
         stop_when_reached: Optional[float] = None,
         callbacks: Optional[Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]]] = None,
@@ -495,15 +495,21 @@ class geneticalgorithm2:
         
         # population creator by random or with oppositions
         if init_creator is None:
+            # just uniform random
             self.creator = SampleInitializers.Combined(
                 minimums = self.var_bound[:, 0],
                 maximums= self.var_bound[:, 1],
-                list_of_indexes = [self.indexes_int, self.indexes_float],
-                list_of_initializers_creators = [
+                indexes = (
+                    self.indexes_int,
+                    self.indexes_float
+                ),
+                creator_initializers = (
                     SampleInitializers.RandomInteger,
                     SampleInitializers.Uniform
-                ] )
+                )
+            )
         else:
+            assert callable(init_creator)
             self.creator = init_creator
         self.init_oppositors = init_oppositors
         self.dup_oppositor = duplicates_oppositor
@@ -519,7 +525,7 @@ class geneticalgorithm2:
                 _, index_of_dups = np.unique(pop_wide[:, :-1], axis=0, return_index=True) 
                 return pop_wide[index_of_dups,:], pop_wide.shape[0] - index_of_dups.size
             
-            if self.dup_oppositor is None: # is there is no dup_oppositor, use random creator
+            if self.dup_oppositor is None: # if there is no dup_oppositor, use random creator
                 def remover(pop_wide, gen):
                     if gen % remove_duplicates_generation_step != 0:
                         return pop_wide
@@ -540,6 +546,8 @@ class geneticalgorithm2:
 
                     return new_pop[np.argsort(new_pop[:,-1]),:] # new pop
             else: # using oppositors
+                assert callable(self.dup_oppositor)
+
                 def remover(pop_wide, gen):
                     if gen % remove_duplicates_generation_step != 0:
                         return pop_wide
@@ -572,7 +580,10 @@ class geneticalgorithm2:
                 return pop_wide
         else:
             if revolution_oppositor is None:
-                raise Exception(f"How can I make revolution each {revolution_after_stagnation_step} stagnation steps if revolution_oppositor is None (not defined)?")
+                raise Exception(
+                    f"How can I make revolution each {revolution_after_stagnation_step} stagnation steps if revolution_oppositor is None (not defined)?"
+                )
+            assert callable(revolution_oppositor)
             
             def revolution(pop_wide, stagnation_count):
                 if stagnation_count < revolution_after_stagnation_step:
@@ -602,7 +613,11 @@ class geneticalgorithm2:
             solo = np.empty(self.dim+1)
             var = np.empty(self.dim)       
             
-            pop[:, :-1] = init_population(total_count = self.pop_s*pop_coef, creator = self.creator, oppositors = self.init_oppositors) 
+            pop[:, :-1] = init_population(
+                samples_count = self.pop_s*pop_coef,
+                creator = self.creator,
+                oppositors = self.init_oppositors
+            )
 
             #for i in self.indexes_int:
             #    pop[:, i] = np.random.randint(self.var_bound[i][0],self.var_bound[i][1]+1, self.pop_s*pop_coef) 

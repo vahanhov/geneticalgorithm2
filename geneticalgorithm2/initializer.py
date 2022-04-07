@@ -8,9 +8,16 @@ import numpy as np
 _local_opt_valid_steps = ('before_select', 'after_select', 'never')
 
 
-def Population_initializer(select_best_of: int = 4,
-                           local_optimization_step: str = 'never',
-                           local_optimizer: Optional[Callable[[np.ndarray, float], Tuple[np.ndarray, float]]] = None):
+def Population_initializer(
+    select_best_of: int = 4,
+    local_optimization_step: str = 'never',
+    local_optimizer: Optional[
+        Callable[
+            [np.ndarray, float],
+            Tuple[np.ndarray, float]
+        ]
+    ] = None
+) -> Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]]:
     """
     select_best_of (int) -- select 1/select_best_of best part of start population. For example, for select_best_of = 4 and population_size = N will be selected N best objects from 5N generated objects (if start_generation = None dictionary). If start_generation is not None dictionary, it will be selected best size(start_generation)/N  objects
 
