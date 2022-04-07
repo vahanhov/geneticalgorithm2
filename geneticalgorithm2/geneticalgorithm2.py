@@ -321,7 +321,7 @@ class geneticalgorithm2:
         revolution_after_stagnation_step: Optional[int] = None,
         revolution_part: float = 0.3,
 
-        population_initializer: Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]] = Population_initializer(select_best_of = 1, local_optimization_step = 'never', local_optimizer = None),  #+
+        population_initializer: Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]] = Population_initializer(select_best_of = 1, local_optimization_step = 'never', local_optimizer = None),
 
         stop_when_reached: Optional[float] = None,
         callbacks: Optional[Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]]] = None,

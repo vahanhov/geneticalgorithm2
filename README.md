@@ -13,6 +13,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 - [About](#about)
 - [Installation](#installation)
 - [Updates information](#updates-information)
+  - [6.7.1 patch](#671-patch)
   - [6.7.0 minor update (new features)](#670-minor-update-new-features)
   - [6.6.2 patch (speed up)](#662-patch-speed-up)
   - [6.6.1 patch](#661-patch)
@@ -117,9 +118,13 @@ pip3 install geneticalgorithm2
 
 # Updates information
 
+## 6.7.1 patch
+
+- changes according to new [OppOpPopInit](https://github.com/PasaOpasen/opp-op-pop-init) version
+
 ## 6.7.0 minor update (new features)
 
-- add `mutation_discrete_type` and `mutation_discrete_probability` parameters in model. It controls mutation behaviour for discrete (integer) variables and works like `mutation_type` and `mutation_probability` work for continious (real) variables. Take a look at [algorithm parameters](#parameters-of-algorithm) 
+- add `mutation_discrete_type` and `mutation_discrete_probability` parameters in model. It controls mutation behavior for discrete (integer) variables and works like `mutation_type` and `mutation_probability` work for continuous (real) variables. Take a look at [algorithm parameters](#parameters-of-algorithm) 
 
 ## 6.6.2 patch (speed up)
 

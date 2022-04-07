@@ -3,4 +3,4 @@ matplotlib
 joblib
 numpy
 func_timeout
-OppOpPopInit
+OppOpPopInit==2.0.0
