@@ -36,4 +36,8 @@ from .initializer import Population_initializer
 from .cache import np_lru_cache
 from .callbacks import Callbacks, Actions, ActionConditions, MiddleCallbacks
 
-from .another_plotting_tools import plot_pop_scores
+from .plotting_tools import plot_pop_scores, plot_several_lines
+
+
+
+

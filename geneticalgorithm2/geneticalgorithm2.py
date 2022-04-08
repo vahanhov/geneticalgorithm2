@@ -30,6 +30,7 @@ from typing import Callable, List, Tuple, Optional, Dict, Any, Union, Sequence, 
 
 import collections
 import warnings
+import operator
 
 
 import sys
@@ -47,7 +48,7 @@ from OppOpPopInit import init_population, SampleInitializers, OppositionOperator
 from.classes import AlgorithmParams, Generation, MiddleCallbackData, GAResult
 
 from .initializer import Population_initializer
-from .another_plotting_tools import plot_pop_scores
+from .plotting_tools import plot_pop_scores, plot_several_lines
 
 from .utils import can_be_prob, is_numpy, union_to_matrix
 
@@ -183,6 +184,8 @@ class geneticalgorithm2:
 
         self.__set_max_iterations()
 
+        self._set_report()
+
 
     def __set_par_s(self, parents_portion: float):
 
@@ -272,6 +275,44 @@ class geneticalgorithm2:
             self.mniwi = self.iterate + 1
         else:
             self.mniwi = int(max_it)
+
+    #endregion
+
+    #region REPORT
+
+    def _set_report(self):
+        """
+        creates default report checker
+        """
+        self.checked_reports = [
+            # item 0 cuz scores will be sorted and min item is items[0]
+            ('report', operator.itemgetter(0)),
+            ('report_average', np.mean)
+        ]
+
+    def _clear_report(self):
+        """
+        removes all report objects
+        """
+        for attr in vars(self).keys():
+            if attr.startswith('report'):
+                delattr(self, attr)
+
+    def _init_report(self):
+        """
+        makes empty report fields
+        """
+        for name, _ in self.checked_reports:
+            setattr(self, name, [])
+
+    def _update_report(self, scores: np.ndarray):
+        """
+        append report value to the end of field
+        """
+        for name, func in self.checked_reports:
+            getattr(self, name).append(
+                func(scores)
+            )
 
     #endregion
 
@@ -666,9 +707,8 @@ class geneticalgorithm2:
 
         #############################################################
         # Report
-        self.report = []
-        self.report_min = []
-        self.report_average = []
+        self._clear_report()  # clear old report objects
+        self._init_report()
         
         self.test_obj = obj
         self.best_variable = var.copy()
@@ -696,13 +736,8 @@ class geneticalgorithm2:
                 counter += 1
             #############################################################
             # Report
+            self._update_report(gen_scores)
 
-            self.report.append(gen_scores[0])
-            self.report_min.append(gen_scores[-1])
-            self.report_average.append(gen_scores.mean())
-    
-
-  
             #############################################################        
             # Select parents
             
@@ -787,11 +822,7 @@ class geneticalgorithm2:
 
         #############################################################
         # Report
-
-        self.report.append(pop[0, self.dim])
-        self.report_min.append(pop[-1, self.dim])
-        self.report_average.append(np.mean(pop[:, self.dim]))
-        
+        self._update_report(pop[:, self.dim])
 
         last_generation = Generation.from_pop_matrix(pop)
         self.result = GAResult(last_generation)
@@ -827,7 +858,14 @@ class geneticalgorithm2:
 
     #region PLOTTING
 
-    def plot_results(self, show_mean = False, title = 'Genetic Algorithm', save_as = None, main_color = 'blue'):
+    def plot_results(
+        self,
+        show_mean: bool = False,
+        title: str = 'Genetic Algorithm',
+        save_as: Optional[str] = None,
+        dpi: int = 200,
+        main_color: str = 'blue'
+     ):
         """
         Simple plot of self.report (if not empty)
         """
@@ -835,27 +873,26 @@ class geneticalgorithm2:
             sys.stdout.write("No results to plot!\n")
             return
 
-        import matplotlib.pyplot as plt
-        from matplotlib.ticker import MaxNLocator
-        
-        ax = plt.axes()
-        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        
-        bests = np.array(self.report)
-        means = np.array(self.report_average)
-        
-        if show_mean: plt.plot(means, color = 'red', label = 'mean by generation', linewidth = 1)
-        plt.plot(bests, color = main_color, label = 'best of generation', linewidth = 2)
-        
-        plt.xlabel('Generation')
-        plt.ylabel('Minimized function')
-        plt.title(title)
-        plt.legend()
-        
-        if save_as is not None:
-            plt.savefig(save_as, dpi = 200)
+        lines = [self.report_average, self.report]
+        colors = ['red', main_color]
+        labels = ['mean by generation', 'best of generation']
+        linewidths = [2, 1]
 
-        plt.show()
+        if not show_mean:
+            for lst in (lines, colors, labels, linewidths):
+                lst.pop(0)
+
+        plot_several_lines(
+            lines=lines,
+            colors=colors,
+            labels=labels,
+            linewidths=linewidths,
+            title=title,
+            xlabel='Generation',
+            ylabel='Minimized function',
+            save_as=save_as,
+            dpi=dpi
+        )
 
     def plot_generation_scores(self, title: str = 'Last generation scores', save_as: Optional[str] = None):
         """

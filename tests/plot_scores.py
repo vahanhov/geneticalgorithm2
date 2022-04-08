@@ -8,18 +8,20 @@ Created on Sun Jan  3 14:13:11 2021
 import sys
 sys.path.append('..')
 
-
 import numpy as np
 
 from geneticalgorithm2 import geneticalgorithm2 as ga
 
-from geneticalgorithm2 import plot_pop_scores # for plotting scores without ga object
+from geneticalgorithm2 import plot_pop_scores  # for plotting scores without ga object
+
 
 def f(X):
-    return 50*np.sum(X) - np.sum(np.sqrt(X)*np.sin(X))
-    
+    return 50 * np.sum(X) - np.sum(np.sqrt(X) * np.sin(X))
+
+
 dim = 25
-varbound = np.array([[0,10]]*dim)
+varbound = np.array([[0, 10]] * dim)
+
 
 # create start population
 start_pop = np.random.uniform(0, 10, (50, dim))

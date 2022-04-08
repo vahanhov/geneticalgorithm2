@@ -1,18 +1,55 @@
 
-from typing import Optional
+from typing import Optional, Sequence
 
 import numpy as np
 
-import matplotlib.pyplot as plt 
-import matplotlib.cm as cm
-from matplotlib.colors import Normalize
-from matplotlib.ticker import NullLocator
 
+def plot_several_lines(
+    lines: Sequence[Sequence[float]],
+    colors: Sequence[str],
+    labels: Sequence[str],
+    linewidths: Sequence[int],
+    title: str = '',
+    xlabel: str = 'Generation',
+    ylabel: str = 'Minimized function',
+    save_as: Optional[str] = None,
+    dpi: int = 200
+):
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import MaxNLocator
+
+    ax = plt.axes()
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+    for line, color, label, linewidth in zip(
+        lines, colors, labels, linewidths
+    ):
+        plt.plot(
+            line,
+            color=color,
+            label=label,
+            linewidth=linewidth
+        )
+
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.legend()
+
+    if save_as is not None:
+        plt.savefig(save_as, dpi=dpi)
+
+    plt.show()
 
 def plot_pop_scores(scores, title: str = 'Population scores', save_as: Optional[str] = None):
     """
     plots scores (numeric values) as sorted bars
     """
+
+    import matplotlib.pyplot as plt
+    import matplotlib.cm as cm
+    from matplotlib.colors import Normalize
+    from matplotlib.ticker import NullLocator
     
     sc = sorted(scores)[::-1]
 
