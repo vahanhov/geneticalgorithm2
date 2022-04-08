@@ -286,8 +286,7 @@ class geneticalgorithm2:
         """
         self.checked_reports = [
             # item 0 cuz scores will be sorted and min item is items[0]
-            ('report', operator.itemgetter(0)),
-            ('report_average', np.mean)
+            ('report', operator.itemgetter(0))
         ]
 
     def _clear_report(self):
@@ -860,7 +859,6 @@ class geneticalgorithm2:
 
     def plot_results(
         self,
-        show_mean: bool = False,
         title: str = 'Genetic Algorithm',
         save_as: Optional[str] = None,
         dpi: int = 200,
@@ -873,20 +871,11 @@ class geneticalgorithm2:
             sys.stdout.write("No results to plot!\n")
             return
 
-        lines = [self.report_average, self.report]
-        colors = ['red', main_color]
-        labels = ['mean by generation', 'best of generation']
-        linewidths = [2, 1]
-
-        if not show_mean:
-            for lst in (lines, colors, labels, linewidths):
-                lst.pop(0)
-
         plot_several_lines(
-            lines=lines,
-            colors=colors,
-            labels=labels,
-            linewidths=linewidths,
+            lines=[self.report],
+            colors=[main_color],
+            labels=['best of generation'],
+            linewidths=[2],
             title=title,
             xlabel='Generation',
             ylabel='Minimized function',
