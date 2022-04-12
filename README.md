@@ -13,6 +13,8 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 - [About](#about)
 - [Installation](#installation)
 - [Updates information](#updates-information)
+  - [**Future**](#future)
+  - [6.7.2 little update](#672-little-update)
   - [6.7.1 patch](#671-patch)
   - [6.7.0 minor update (new features)](#670-minor-update-new-features)
   - [6.6.2 patch (speed up)](#662-patch-speed-up)
@@ -53,6 +55,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
   - [Revolutions](#revolutions)
   - [Duplicates removing](#duplicates-removing)
   - [Cache](#cache)
+  - [Report checker](#report-checker)
   - [Middle callbacks](#middle-callbacks)
   - [How to compare efficiency of several versions of GA optimization](#how-to-compare-efficiency-of-several-versions-of-ga-optimization)
   - [Hints on how to adjust genetic algorithm's parameters (from `geneticalgorithm` package)](#hints-on-how-to-adjust-genetic-algorithms-parameters-from-geneticalgorithm-package)
@@ -117,6 +120,18 @@ pip3 install geneticalgorithm2
 ```
 
 # Updates information
+
+## **Future**
+
+- duplicates removing and revolutions will be moved to `MiddleCallbacks` and removed as alone `run()` parameters
+- `function_timeout` and `function` will be moved to `run()` method
+- new stop criteria callbacks (min std, max functions evaluations)
+
+## 6.7.2 little update
+
+- better flexible logic for report, [take a look](#report-checker)
+- removed `show mean` parameter from `model.plot_result` and now model reports only best score by default, not average and so on (u can specify if u wanna report average too)
+- `plot_several_lines` useful function
 
 ## 6.7.1 patch
 
@@ -635,7 +650,8 @@ It would be more logical to use params like `studEA` as an algorithm param, but 
   * `last_generation` -- `Generation` object of last generation
   * `variable` -- best unit of last generation
   * `score` -- metric of the best unit
-* `report`: is a record of the progress of the algorithm over iterations. There are also `report_average` and `report_min` fields which are the average and min generation values by each generation
+  
+* `report`: is a record of the progress of the algorithm over iterations. Also u can specify to report not only best values. [Go to](#report-checker)
 
 
 
@@ -1055,6 +1071,63 @@ def minimized_func(arr):
 # don't forget to clear cache
 minimized_func.cache_clear()
 ```
+## Report checker
+
+Basically the model checks best population score (minimal score of generation) each generation and saves it to `report` field. Actually this sequence of numbers u see in big part of plots. This behavior is needed for several parts and u cannot disable it. But if u want to report some other metric without using [callbacks](#middle-callbacks), there is highly simple and fast way.
+
+After creating `model` but before running `run()` u need to append ur logic to `model.checked_reports` field. Take a look at example:
+
+```python
+import numpy as np
+
+from geneticalgorithm2 import geneticalgorithm2 as ga
+from geneticalgorithm2 import plot_several_lines
+
+def f(X):
+    return 50*np.sum(X) - np.sum(np.sqrt(X) * np.sin(X))
+
+dim = 25
+varbound = [[0 ,10]]*dim
+
+model = ga(function=f, dimension=dim,
+           variable_type='real', variable_boundaries=varbound,
+           algorithm_parameters={
+               'max_num_iteration': 600
+           }
+)
+
+# here model exists and has checked_reports field
+# now u can append any functions to report
+
+model.checked_reports.extend(
+    [
+        ('report_average', np.mean),
+        ('report_25', lambda arr: np.quantile(arr, 0.25)),
+        ('report_50', np.median)
+    ]
+)
+
+# run optimization process
+model.run(no_plot = False)
+
+# now u have not only model.report but model.report_25 and so on
+
+#plot reports
+names = [name for name, _ in model.checked_reports[::-1]]
+plot_several_lines(
+    lines=[getattr(model, name) for name in names],
+    colors=('green', 'black', 'red', 'blue'),
+    labels=['median value', '25% quantile', 'mean of population', 'best pop score'],
+    linewidths=(1, 1.5, 1, 2),
+    title="Several custom reports with base reports",
+    save_as='./output/report.png'
+)
+```
+
+![](tests/output/report.png)
+
+As u see, u should append tuple `(name of report, func to evaluate report)` to `model.checked_report`. It's highly recommended to start this name with `report_` (e. g. `report_my_median`). And the function u use will get 1D-numpy *sorted* array of population scores.
+
 
 ## Middle callbacks
 

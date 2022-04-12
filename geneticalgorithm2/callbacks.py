@@ -13,7 +13,7 @@ from OppOpPopInit import OppositionOperators, SampleInitializers
 
 from .classes import MiddleCallbackData, Generation
 
-from .another_plotting_tools import plot_pop_scores
+from .plotting_tools import plot_pop_scores
 from .utils import mkdir, union_to_matrix
 
 
