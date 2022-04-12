@@ -136,16 +136,17 @@ class Generation(DictLikeGetSet):
     @property
     def size(self):
         return self.scores.size
+
     @property
     def dim_size(self):
         return self.variables.shape[1]
 
     def as_wide_matrix(self):
+        # should not be used in main code -- was needed for old versions
         return union_to_matrix(self.variables, self.scores)
 
-
     def save(self, path: str):
-        np.savez(path, population = self.variables, scores = self.scores)
+        np.savez(path, population=self.variables, scores=self.scores)
 
 
     @staticmethod
@@ -163,7 +164,19 @@ class Generation(DictLikeGetSet):
 
 
     @staticmethod
-    def from_object(dim: int, object: Union[str, Dict[str, np.ndarray], Generation, np.ndarray, Tuple[Optional[np.ndarray], Optional[np.ndarray]]]):
+    def from_object(
+        dim: int,
+        object: Union[
+            str,
+            Dict[str, np.ndarray],
+            Generation,
+            np.ndarray,
+            Tuple[
+                Optional[np.ndarray],
+                Optional[np.ndarray]
+            ]
+        ]
+    ):
 
         obj_type = type(object)
 
@@ -212,6 +225,7 @@ class Generation(DictLikeGetSet):
 
     @staticmethod
     def from_pop_matrix(pop: np.ndarray):
+        warnings.warn("depricated! pop matrix style will be removed at version 7, use samples and scores separetly")
         return Generation(
             variables=pop[:, :-1],
             scores=pop[:, -1]

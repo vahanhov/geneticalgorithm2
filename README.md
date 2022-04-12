@@ -14,6 +14,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 - [Installation](#installation)
 - [Updates information](#updates-information)
   - [**Future**](#future)
+  - [6.7.3 speed up](#673-speed-up)
   - [6.7.2 little update](#672-little-update)
   - [6.7.1 patch](#671-patch)
   - [6.7.0 minor update (new features)](#670-minor-update-new-features)
@@ -126,6 +127,10 @@ pip3 install geneticalgorithm2
 - duplicates removing and revolutions will be moved to `MiddleCallbacks` and removed as alone `run()` parameters
 - `function_timeout` and `function` will be moved to `run()` method
 - new stop criteria callbacks (min std, max functions evaluations)
+
+## 6.7.3 speed up
+
+- refactor to make `run()` method faster
 
 ## 6.7.2 little update
 
