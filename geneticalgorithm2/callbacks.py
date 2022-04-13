@@ -77,10 +77,10 @@ class Callbacks:
 class Actions:
 
     @staticmethod
-    def Stop():
+    def Stop(reason_name: str = 'stopped by Stop callback'):
         
         def func(data: MiddleCallbackData):
-            data.current_stagnation = 2*data.max_stagnation
+            data.reason_to_stop = reason_name
             return data
         return func
 

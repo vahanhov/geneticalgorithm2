@@ -255,6 +255,8 @@ class MiddleCallbackData(DictLikeGetSet):
     data object using with middle callbacks
     """
 
+    reason_to_stop: Optional[str]
+
     last_generation: Generation
 
     current_generation: int
