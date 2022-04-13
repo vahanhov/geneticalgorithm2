@@ -22,9 +22,6 @@ SOFTWARE.
 
 '''
 
-###############################################################################
-###############################################################################
-###############################################################################
 
 from typing import Callable, List, Tuple, Optional, Dict, Any, Union, Sequence, Set
 
@@ -41,11 +38,11 @@ import random
 import numpy as np
 from func_timeout import func_timeout, FunctionTimedOut
 
-from OppOpPopInit import init_population, SampleInitializers, OppositionOperators
+from OppOpPopInit import init_population, SampleInitializers, OppositionOperators, set_seed
 
 #region INTERNAL IMPORTS
 
-from.classes import AlgorithmParams, Generation, MiddleCallbackData, GAResult
+from .classes import AlgorithmParams, Generation, MiddleCallbackData, GAResult
 
 from .initializer import Population_initializer
 from .plotting_tools import plot_pop_scores, plot_several_lines
@@ -69,7 +66,8 @@ class geneticalgorithm2:
     '''
     
     default_params = AlgorithmParams()
-    
+    PROGRESS_BAR_LEN = 20
+
     @property
     def output_dict(self):
         warnings.warn(
@@ -82,6 +80,7 @@ class geneticalgorithm2:
         return self.prob_mut > 0 or self.prob_mut_discrete > 0
 
     #region INIT
+
     def __init__(
         self,
         function: Callable[[np.ndarray], float],
@@ -321,6 +320,23 @@ class geneticalgorithm2:
 
     #region RUN METHODS
 
+    def __progress(self, count: int, total: int, status: str = ''):
+
+        part = count / total
+
+        filled_len = round(geneticalgorithm2.PROGRESS_BAR_LEN * part)
+        percents = round(100.0 * part, 1)
+        bar = '|' * filled_len + '_' * (geneticalgorithm2.PROGRESS_BAR_LEN - filled_len)
+
+        sys.stdout.write('\r%s %s%s %s' % (bar, percents, '%', status))
+        sys.stdout.flush()
+
+    def __str__(self):
+        return f"Genetic algorithm object with parameters {self.param}"
+
+    def __repr__(self):
+        return self.__str__()
+
     def _simulate(self, sample: np.ndarray):
 
         obj = None
@@ -355,13 +371,6 @@ class geneticalgorithm2:
         else:
             self.indexes_float_mut = self.indexes_float
             self.indexes_int_mut = self.indexes_int
-
-    def __set_seed(self, seed):
-        if seed is not None:
-            random.seed(seed)
-            np.random.seed(seed)
-
-
 
 
     def run(
@@ -448,9 +457,9 @@ class geneticalgorithm2:
         assert (time_limit_secs is None or time_limit_secs > 0), 'time_limit_secs must be None of number > 0'
 
         self.__set_mutation_indexes(mutation_indexes)
-        self.__set_seed(seed)
+        set_seed(seed)
 
-        show_progress = (lambda t, t2, s: self.__progress(t, t2, status = s)) if not disable_progress_bar else (lambda t, t2, s: None)
+        show_progress = (lambda t, t2, s: self.__progress(t, t2, status=s)) if not disable_progress_bar else (lambda t, t2, s: None)
 
         # gets indexes of 2 parents to crossover
         get_parents_inds = (lambda par_count: (0, random.randrange(1, par_count))) if studEA else (lambda par_count: tuple(np.random.randint(0, par_count, 2)))
@@ -485,14 +494,16 @@ class geneticalgorithm2:
                 parents_portion=self.param.parents_portion,
                 elit_ratio=self.param.elit_ratio,
 
-                set_function=self.set_function
+                set_function=self.set_function,
+
+                reason_to_stop=reason_to_stop
             )
 
         def set_data(data: MiddleCallbackData):
             """
             sets data to model
             """
-            nonlocal pop, scores, fails
+            nonlocal pop, scores, fails, reason_to_stop
 
             pop, scores = data.last_generation.variables, data.last_generation.scores
             self.pop_s = pop.shape[0]
@@ -511,7 +522,8 @@ class geneticalgorithm2:
             self.crossover = data.crossover
             self.selection = data.selection
 
-            fails = data.current_generation
+            fails = data.current_stagnation
+            reason_to_stop = data.reason_to_stop
             self.mniwi = data.max_stagnation
 
             self.set_function = data.set_function
@@ -679,6 +691,16 @@ class geneticalgorithm2:
                 args = args[:scores.size]
                 return combined[args], combined_scores[args]
 
+        #
+        #
+        #  START ALGORITHM LOGIC
+        #
+        #
+
+        # Report
+        self._clear_report()  # clear old report objects
+        self._init_report()
+
 
         # initialization of pop
         
@@ -721,54 +743,48 @@ class geneticalgorithm2:
         
         pop, scores = initializer_func(pop, scores)
 
-        self.pop_s = pop.shape[0]
-        
-        #############################################################
-
-        #############################################################
-        # Report
-        self._clear_report()  # clear old report objects
-        self._init_report()
-
+        self.pop_s = scores.size
         self.best_function = scores.min()
-        ##############################################################   
-        
+
         t = 1
         fails = 0  # iterations without progress
-        while t <= self.iterate:
+        reason_to_stop: Optional[str] = None
 
-            if fails > self.mniwi or stop_by_val(self.best_function) or time_is_done():
-                args_to_sort = scores.argsort()
-                pop = pop[args_to_sort]
-                scores = scores[args_to_sort]
-                if scores[0] >= self.best_function or fails == 2*self.mniwi:
-                    t = self.iterate  # to stop loop
-                    show_progress(t, self.iterate, "GA is running... STOP!")
-                    t += 1
-                    self.stop_mniwi = fails > self.mniwi
-            
-            show_progress(t, self.iterate, f"GA is running...{t} gen from {self.iterate}")
+        #  while no reason to stop
+        while True:
 
-            #############################################################
-            # Sort
             args_to_sort = scores.argsort()
             pop = pop[args_to_sort]
             scores = scores[args_to_sort]
+            self._update_report(scores)
+
+            if fails > self.mniwi:
+                reason_to_stop = f"limit of fails: {fails}"
+            elif t == self.iterate:
+                reason_to_stop = f'limit of iterations: {t}'
+            elif stop_by_val(self.best_function):
+                reason_to_stop = f"stop value reached: {self.best_function} <= {stop_when_reached}"
+            elif time_is_done():
+                reason_to_stop = f'time is done: {time.time() - start_time} >= {time_limit_secs}'
+
+            if reason_to_stop is not None:
+                show_progress(t, self.iterate, f"GA is running... STOP! {reason_to_stop}")
+                break
+
+            show_progress(t, self.iterate, f"GA is running...{t} gen from {self.iterate}")
+
 
             if scores[0] < self.best_function:  # if there is progress
                 fails = 0
                 self.best_function = scores[0]
                 
-                show_progress(t, self.iterate,
+                show_progress(t,
+                              self.iterate,
                               f"GA is running...{t} gen from {self.iterate}...best value = {self.best_function}"
                               )
             else:
                 fails += 1
-            #############################################################
-            # Report
-            self._update_report(scores)
 
-            #############################################################        
             # Select parents
             
             par = np.empty((self.par_s, self.dim))
@@ -796,7 +812,6 @@ class geneticalgorithm2:
                  
             ef_par = par[ef_par_list].copy()
 
-            #############################################################  
             # New generation
             pop = np.empty((self.pop_s, self.dim))
             scores = np.empty(self.pop_s)
@@ -828,33 +843,20 @@ class geneticalgorithm2:
             pop, scores = remover(pop, scores, t)
             # revolution
             pop, scores = revolution(pop, scores, fails)
-            
-        #############################################################       
+
             total_callback(t, self.report, pop, scores)
             total_middle_callback()
 
             t += 1
 
-        
-        #############################################################
-        #Sort
-        args_to_sort = scores.argsort()
-        pop = pop[args_to_sort]
-        scores = scores[args_to_sort]
-        
         if scores[0] < self.best_function:
             self.best_function = scores[0]
-
-        #############################################################
-        # Report
-        self._update_report(scores)
 
         last_generation = Generation(pop, scores)
         self.result = GAResult(last_generation)
 
         if save_last_generation_as is not None:
             last_generation.save(save_last_generation_as)
-
 
         if not disable_printing:
             show = ' '*200
@@ -869,13 +871,10 @@ class geneticalgorithm2:
             self.plot_results()
 
         if not disable_printing:
-            if self.stop_mniwi:
-                sys.stdout.write('\nWarning: GA is terminated due to the maximum number of iterations without improvement was met!')
-            elif stop_by_val(self.best_function):
-                sys.stdout.write(f'\nWarning: GA is terminated because of reaching stop_when_reached (current val {self.best_function} <= {stop_when_reached})!')
-            elif time_is_done():
-                sys.stdout.write(f'\nWarning: GA is terminated because of time limit ({time_limit_secs} secs) of working!')
-
+            if reason_to_stop is not None and 'iterations' not in reason_to_stop:
+                sys.stdout.write(
+                    f'\nWarning: GA is terminated because of {reason_to_stop}'
+                )
 
         return self.result
 
@@ -968,25 +967,6 @@ class geneticalgorithm2:
     #endregion
 
 
-
-###############################################################################
-    def __progress(self, count, total, status=''):
-        
-        bar_len = 50
-        filled_len = int(round(bar_len * count / float(total)))
-
-        percents = round(100.0 * count / float(total), 1)
-        bar = '|' * filled_len + '_' * (bar_len - filled_len)
-
-        sys.stdout.write('\r%s %s%s %s' % (bar, percents, '%', status))
-        sys.stdout.flush()     
-
-    def __str__(self):
-        return f"Genetic algorithm object with parameters {self.param}"
-
-    def __repr__(self):
-        return self.__str__()
-
     #region Set functions
 
     @staticmethod
@@ -1011,12 +991,6 @@ class geneticalgorithm2:
         return func
             
     #endregion
-
-
-
-
-
-
 
 
 
