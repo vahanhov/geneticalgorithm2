@@ -714,7 +714,7 @@ class geneticalgorithm2:
 
             # pop = np.empty((self.pop_s, self.dim+1))
             pop = start_generation.variables
-            scores = start_generation.scores or self.set_function(pop)
+            scores = start_generation.scores if start_generation.scores is not None else self.set_function(pop)
 
         
         # Initialization by select bests and local_descent
