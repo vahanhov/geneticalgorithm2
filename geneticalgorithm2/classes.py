@@ -54,7 +54,7 @@ class AlgorithmParams(DictLikeGetSet):
 
     mutation_probability: float = 0.1
     mutation_discrete_probability: Optional[float] = None
-    crossover_probability: float = 0.5
+    crossover_probability: Optional[float] = None
 
     elit_ratio: float = 0.01
     parents_portion: float = 0.3

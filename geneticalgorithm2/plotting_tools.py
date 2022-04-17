@@ -7,8 +7,8 @@ import numpy as np
 def plot_several_lines(
     lines: Sequence[Sequence[float]],
     colors: Sequence[str],
-    labels: Sequence[str],
-    linewidths: Sequence[int],
+    labels: Optional[Sequence[str]] = None,
+    linewidths: Optional[Sequence[int]] = None,
     title: str = '',
     xlabel: str = 'Generation',
     ylabel: str = 'Minimized function',
@@ -20,6 +20,11 @@ def plot_several_lines(
 
     ax = plt.axes()
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+    if labels is None:
+        labels = list(map(str, range(len(lines))))
+    if linewidths is None:
+        linewidths = [1] * len(lines)
 
     for line, color, label, linewidth in zip(
         lines, colors, labels, linewidths

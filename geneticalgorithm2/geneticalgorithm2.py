@@ -151,6 +151,7 @@ class geneticalgorithm2:
 
         self.f: Callable[[np.ndarray], float] = None
         self.funtimeout: float = None
+        self.set_function: Callable[[np.ndarray], np.ndarray] = None
 
         # self.dim: int = None
         self.var_bounds: List[Tuple[Union[int, float], Union[int, float]]] = None
@@ -571,13 +572,11 @@ class geneticalgorithm2:
                 if flag:
                     set_data(data)  # update global date if there was real callback step
 
-
         start_time = time.time()
         time_is_done = (lambda: False) if time_limit_secs is None else (lambda: int(time.time() - start_time) >= time_limit_secs)
 
         ############################################################# 
         # Initial Population
-        
         self.set_function = set_function or geneticalgorithm2.default_set_function(self.f)
 
         pop_coef, initializer_func = population_initializer
@@ -820,7 +819,8 @@ class geneticalgorithm2:
             par_scores[elit_slice] = scores[elit_slice].copy()
                 
             # non-elit parents indexes
-            new_par_inds = self.selection(scores[self.elit_count:], self.parents_count - self.elit_count).astype(np.int16) + self.elit_count
+            #new_par_inds = self.selection(scores[self.elit_count:], self.parents_count - self.elit_count).astype(np.int16) + self.elit_count
+            new_par_inds = self.selection(scores, self.parents_count - self.elit_count).astype(np.int16)
             par_slice = slice(self.elit_count, self.parents_count)
             par[par_slice] = pop[new_par_inds].copy()
             par_scores[par_slice] = scores[new_par_inds].copy()
@@ -874,8 +874,7 @@ class geneticalgorithm2:
 
             t += 1
 
-        if scores[0] < self.best_function:
-            self.best_function = scores[0]
+        self.best_function = fast_min(scores[0], self.best_function)
 
         last_generation = Generation(pop, scores)
         self.result = GAResult(last_generation)
@@ -953,13 +952,11 @@ class geneticalgorithm2:
 
         for i in self.indexes_int_mut:
             if random.random() < self.prob_mut_discrete:
-                lower, upper = self.var_bounds[i]
-                x[i] = self.discrete_mutation(x[i], lower, upper)
+                x[i] = self.discrete_mutation(x[i], *self.var_bounds[i])
 
         for i in self.indexes_float_mut:                
             if random.random() < self.prob_mut:
-                lower, upper = self.var_bounds[i]
-                x[i] = self.real_mutation(x[i], lower, upper)
+                x[i] = self.real_mutation(x[i], *self.var_bounds[i])
             
         return x
 
@@ -976,8 +973,7 @@ class geneticalgorithm2:
                 elif v1 > v2:
                     x[i] = random.randint(v2, v1)
                 else:
-                    lower, upper = self.var_bounds[i]
-                    x[i] = random.randint(lower, upper)
+                    x[i] = random.randint(*self.var_bounds[i])
                         
         for i in self.indexes_float_mut:                
             if random.random() < self.prob_mut:
@@ -985,8 +981,7 @@ class geneticalgorithm2:
                 if v1 != v2:
                     x[i] = random.uniform(v1, v2)
                 else:
-                    lower, upper = self.var_bounds[i]
-                    x[i] = random.uniform(lower, upper)
+                    x[i] = random.uniform(*self.var_bounds[i])
         return x
 
     #endregion

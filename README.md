@@ -14,6 +14,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 - [Installation](#installation)
 - [Updates information](#updates-information)
   - [**Future**](#future)
+  - [6.8.0 minor update](#680-minor-update)
   - [6.7.7 refactor](#677-refactor)
   - [6.7.6 bug fix](#676-bug-fix)
   - [6.7.5 refactor](#675-refactor)
@@ -131,6 +132,10 @@ pip3 install geneticalgorithm2
 - duplicates removing and revolutions will be moved to `MiddleCallbacks` and removed as alone `run()` parameters
 - `function_timeout` and `function` will be moved to `run()` method
 - new stop criteria callbacks (min std, max functions evaluations)
+
+## 6.8.0 minor update
+
+- remove `crossover_probability` model parameter because of it has no sence to exist (and 1.0 value is better than others, take a look at [results](/tests/output/sense_of_crossover_prob__no_sense.png)). This parameter came from `geneticalgorithm` old package.
 
 ## 6.7.7 refactor
 
