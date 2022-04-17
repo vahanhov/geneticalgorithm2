@@ -33,7 +33,7 @@ import operator
 import sys
 import time
 import random
-
+import math
 
 import numpy as np
 from func_timeout import func_timeout, FunctionTimedOut
@@ -47,7 +47,7 @@ from .classes import AlgorithmParams, Generation, MiddleCallbackData, GAResult
 from .initializer import Population_initializer
 from .plotting_tools import plot_pop_scores, plot_several_lines
 
-from .utils import can_be_prob, is_numpy, union_to_matrix
+from .utils import can_be_prob, is_numpy, union_to_matrix, fast_max
 
 #endregion
 
@@ -236,7 +236,7 @@ class geneticalgorithm2:
         variable_type: Union[str, Sequence[str]],
         variable_boundaries
     ):
-        if variable_type == 'bool':
+        if isinstance(variable_type, str) and variable_type == 'bool':
             self.var_bound = np.array([[0, 1]] * self.dim)
         else:
 
@@ -272,12 +272,11 @@ class geneticalgorithm2:
         else:
             self.iterate = int(self.param['max_num_iteration'])
 
-        self.stop_mniwi = False  # is stopped cuz of no progress some iterations
         max_it = self.param['max_iteration_without_improv']
         if max_it is None:
-            self.mniwi = self.iterate + 1
+            self.count_stagnation = self.iterate + 1
         else:
-            self.mniwi = int(max_it)
+            self.count_stagnation = int(max_it)
 
     #endregion
 
@@ -489,7 +488,7 @@ class geneticalgorithm2:
                 selection=self.selection,
 
                 current_stagnation=fails,
-                max_stagnation=self.mniwi,
+                max_stagnation=self.count_stagnation,
 
                 parents_portion=self.param.parents_portion,
                 elit_ratio=self.param.elit_ratio,
@@ -524,7 +523,7 @@ class geneticalgorithm2:
 
             fails = data.current_stagnation
             reason_to_stop = data.reason_to_stop
-            self.mniwi = data.max_stagnation
+            self.count_stagnation = data.max_stagnation
 
             self.set_function = data.set_function
 
@@ -758,7 +757,7 @@ class geneticalgorithm2:
             scores = scores[args_to_sort]
             self._update_report(scores)
 
-            if fails > self.mniwi:
+            if fails > self.count_stagnation:
                 reason_to_stop = f"limit of fails: {fails}"
             elif t == self.iterate:
                 reason_to_stop = f'limit of iterations: {t}'
@@ -771,19 +770,17 @@ class geneticalgorithm2:
                 show_progress(t, self.iterate, f"GA is running... STOP! {reason_to_stop}")
                 break
 
-            show_progress(t, self.iterate, f"GA is running...{t} gen from {self.iterate}")
-
-
             if scores[0] < self.best_function:  # if there is progress
                 fails = 0
                 self.best_function = scores[0]
-                
-                show_progress(t,
-                              self.iterate,
-                              f"GA is running...{t} gen from {self.iterate}...best value = {self.best_function}"
-                              )
             else:
                 fails += 1
+
+            show_progress(
+                t,
+                self.iterate,
+                f"GA is running...{t} gen from {self.iterate}...best value = {self.best_function}"
+            )
 
             # Select parents
             
@@ -802,14 +799,16 @@ class geneticalgorithm2:
             par[par_slice] = pop[new_par_inds].copy()
             par_scores[par_slice] = scores[new_par_inds].copy()
 
+            #
             #  select parents for crossover
-            ef_par_list = np.random.random(self.par_s) < self.prob_cross
-            par_count = ef_par_list.sum()
-            if par_count < 2:
-                while par_count < 2:  # 2 parents at least
-                    ef_par_list = np.random.random(self.par_s) <= self.prob_cross
-                    par_count = np.sum(ef_par_list)
-                 
+            #
+            par_count = fast_max(2, math.floor(self.par_s * self.prob_cross))  # at least 2 parents
+            #  select random parents
+            ef_par_list = np.random.choice(
+                np.arange(self.par_s),
+                par_count,
+                replace=False
+            )
             ef_par = par[ef_par_list].copy()
 
             # New generation

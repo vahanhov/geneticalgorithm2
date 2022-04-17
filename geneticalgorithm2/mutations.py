@@ -5,7 +5,7 @@ import random
 import numpy as np
 
 
-from .utils import min_fast, max_fast
+from .utils import fast_min, fast_max
 
 
 class Mutations:
@@ -29,7 +29,7 @@ class Mutations:
     def uniform_by_x():
         
         def func(x: float, left: float, right: float):
-            alp = min_fast(x - left, right - x)
+            alp = fast_min(x - left, right - x)
             return random.uniform(x - alp, x + alp)
         return func
 
@@ -48,7 +48,7 @@ class Mutations:
         """
         def func(x: float, left: float, right: float):
             std = sd * (right - left)
-            return max_fast(left, min_fast(right, np.random.normal(loc = x, scale = std)))
+            return fast_max(left, fast_min(right, np.random.normal(loc = x, scale = std)))
         
         return func
 
@@ -59,7 +59,7 @@ class Mutations:
         """
         def func(x: float, left: float, right: float):
             std = sd * (right - left)
-            return max_fast(left, min_fast(right, np.random.normal(loc = (left+right)*0.5, scale = std)))
+            return fast_max(left, fast_min(right, np.random.normal(loc =(left + right) * 0.5, scale = std)))
         
         return func
 

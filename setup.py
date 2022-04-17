@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="geneticalgorithm2", 
-    version="6.7.5",
+    version="6.7.6",
     author="Demetry Pascal",
     author_email="qtckpuhdsa@gmail.com",
     maintainer='Demetry Pascal',
@@ -14,6 +14,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/PasaOpasen/geneticalgorithm2",
+    license='MIT',
     keywords=['solve', 'optimization', 'problem', 'genetic', 'algorithm', 'GA', 'easy', 'fast', 'genetic-algorithm', 'combinatorial', 'mixed', 'evolutionary'],
     packages=setuptools.find_packages(),
     classifiers=[
@@ -27,7 +28,7 @@ setuptools.setup(
         'numpy',
         'matplotlib',
         'joblib',
-        'OppOpPopInit'
+        'OppOpPopInit>=2.0.0'
         ]
     
     )
