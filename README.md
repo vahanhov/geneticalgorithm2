@@ -1174,7 +1174,7 @@ There is an amazing way to control optimization process using `MiddleCallbacks` 
         selection=self.selection,
 
         current_stagnation=counter,
-        max_stagnation=self.count_stagnation,
+        max_stagnation=self.max_stagnations,
 
         parents_portion=self.param.parents_portion,
         elit_ratio=self.param.elit_ratio,

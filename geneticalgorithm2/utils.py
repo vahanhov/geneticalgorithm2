@@ -26,6 +26,9 @@ def mkdir(folder: str):
 def can_be_prob(value: float):
     return value >=0 and value <=1
 
+def is_current_gen_number(number):
+    return (number is None) or (type(number) == int and number > 0)
+
 
 def is_numpy(arg):
     return type(arg) == np.ndarray
