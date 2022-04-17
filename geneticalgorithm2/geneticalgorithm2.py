@@ -151,6 +151,7 @@ class geneticalgorithm2:
 
         self.f: Callable[[np.ndarray], float] = None
         self.funtimeout: float = None
+        self.set_function: Callable[[np.ndarray], np.ndarray] = None
 
         # self.dim: int = None
         self.var_bounds: List[Tuple[Union[int, float], Union[int, float]]] = None
@@ -194,8 +195,10 @@ class geneticalgorithm2:
         assert self.param.mutation_discrete_probability is None or can_be_prob(self.param.mutation_discrete_probability)
         self.prob_mut_discrete = self.param.mutation_discrete_probability or self.prob_mut
 
-        assert can_be_prob(self.param.crossover_probability)
-        self.prob_cross = self.param.crossover_probability
+        if self.param.crossover_probability is not None:
+            warnings.warn(
+                f"crossover_probability is deprecated and will be removed in version 7. Reason: it's old and has no sense"
+            )
 
         #############################################################
         # input function
@@ -264,8 +267,8 @@ class geneticalgorithm2:
     def _set_parents_count(self, parents_portion: float):
 
         self.parents_count = int(parents_portion * self.population_size)
-        assert self.parents_count <= self.population_size, f'parents count {self.parents_count} cannot be less than population size {self.population_size}'
-        trl= self.population_size - self.parents_count
+        assert self.parents_count <= self.population_size and self.parents_count > 1, f'parents count {self.parents_count} cannot be less than population size {self.population_size}'
+        trl = self.population_size - self.parents_count
         if trl % 2 != 0:
             self.parents_count += 1
 
@@ -502,7 +505,6 @@ class geneticalgorithm2:
 
                 mutation_prob=self.prob_mut,
                 mutation_discrete_prob=self.prob_mut_discrete,
-                crossover_prob=self.prob_cross,
                 mutation=self.real_mutation,
                 mutation_discrete=self.discrete_mutation,
                 crossover=self.crossover,
@@ -536,7 +538,6 @@ class geneticalgorithm2:
 
             self.prob_mut = data.mutation_prob
             self.prob_mut_discrete = data.mutation_discrete_prob
-            self.prob_cross = data.crossover_prob
             self.real_mutation = data.mutation
             self.discrete_mutation = data.mutation_discrete
             self.crossover = data.crossover
@@ -571,13 +572,11 @@ class geneticalgorithm2:
                 if flag:
                     set_data(data)  # update global date if there was real callback step
 
-
         start_time = time.time()
         time_is_done = (lambda: False) if time_limit_secs is None else (lambda: int(time.time() - start_time) >= time_limit_secs)
 
         ############################################################# 
         # Initial Population
-        
         self.set_function = set_function or geneticalgorithm2.default_set_function(self.f)
 
         pop_coef, initializer_func = population_initializer
@@ -769,11 +768,8 @@ class geneticalgorithm2:
         count_stagnation = 0  # iterations without progress
         reason_to_stop: Optional[str] = None
 
-        par_count_for_crossover = fast_max(2, math.floor(self.parents_count * self.prob_cross))  # at least 2 parents
         # gets indexes of 2 parents to crossover
-        get_parents_inds = (lambda: (0, random.randrange(1, par_count_for_crossover))) if studEA else (lambda: random.sample(range(par_count_for_crossover), 2))
-        if par_count_for_crossover == 2:
-            warnings.warn("selected only 2 parents for crossover!!! increase population size of parents portion or crossover probability")
+        get_parents_inds = (lambda: (0, random.randrange(1, self.parents_count))) if studEA else (lambda: random.sample(range(self.parents_count), 2))
 
         #  while no reason to stop
         while True:
@@ -821,21 +817,10 @@ class geneticalgorithm2:
                 
             # non-elit parents indexes
             new_par_inds = self.selection(scores[self.elit_count:], self.parents_count - self.elit_count).astype(np.int16) + self.elit_count
+            #new_par_inds = self.selection(scores, self.parents_count - self.elit_count).astype(np.int16)
             par_slice = slice(self.elit_count, self.parents_count)
             par[par_slice] = pop[new_par_inds].copy()
             par_scores[par_slice] = scores[new_par_inds].copy()
-
-            #
-            #  select parents for crossover
-            #
-
-            #  select random parents
-            ef_par_list = np.random.choice(
-                np.arange(self.parents_count),
-                par_count_for_crossover,
-                replace=False
-            )
-            ef_par = par[ef_par_list].copy()
 
             # New generation
             pop = np.empty((self.population_size, self.dim))
@@ -847,8 +832,8 @@ class geneticalgorithm2:
                 
             for k in range(self.parents_count, self.population_size, 2):
                 r1, r2 = get_parents_inds()
-                pvar1 = ef_par[r1]
-                pvar2 = ef_par[r2]
+                pvar1 = par[r1]
+                pvar2 = par[r2]
                 
                 ch1, ch2 = self.crossover(pvar1, pvar2)
                 
@@ -874,8 +859,7 @@ class geneticalgorithm2:
 
             t += 1
 
-        if scores[0] < self.best_function:
-            self.best_function = scores[0]
+        self.best_function = fast_min(scores[0], self.best_function)
 
         last_generation = Generation(pop, scores)
         self.result = GAResult(last_generation)
@@ -953,13 +937,11 @@ class geneticalgorithm2:
 
         for i in self.indexes_int_mut:
             if random.random() < self.prob_mut_discrete:
-                lower, upper = self.var_bounds[i]
-                x[i] = self.discrete_mutation(x[i], lower, upper)
+                x[i] = self.discrete_mutation(x[i], *self.var_bounds[i])
 
         for i in self.indexes_float_mut:                
             if random.random() < self.prob_mut:
-                lower, upper = self.var_bounds[i]
-                x[i] = self.real_mutation(x[i], lower, upper)
+                x[i] = self.real_mutation(x[i], *self.var_bounds[i])
             
         return x
 
@@ -976,8 +958,7 @@ class geneticalgorithm2:
                 elif v1 > v2:
                     x[i] = random.randint(v2, v1)
                 else:
-                    lower, upper = self.var_bounds[i]
-                    x[i] = random.randint(lower, upper)
+                    x[i] = random.randint(*self.var_bounds[i])
                         
         for i in self.indexes_float_mut:                
             if random.random() < self.prob_mut:
@@ -985,8 +966,7 @@ class geneticalgorithm2:
                 if v1 != v2:
                     x[i] = random.uniform(v1, v2)
                 else:
-                    lower, upper = self.var_bounds[i]
-                    x[i] = random.uniform(lower, upper)
+                    x[i] = random.uniform(*self.var_bounds[i])
         return x
 
     #endregion

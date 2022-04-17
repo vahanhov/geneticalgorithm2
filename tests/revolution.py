@@ -29,13 +29,15 @@ iterations = 1000
     
 varbound = np.array([[-500,500]]*dim)
 
-model = ga(function=func, dimension=dim,
-           variable_type='real',
-           variable_boundaries=varbound,
-           algorithm_parameters={
-               'max_num_iteration': iterations,
-               'population_size': 400
-               })
+model = ga(
+    function=func, dimension=dim,
+    variable_type='real',
+    variable_boundaries=varbound,
+    algorithm_parameters={
+        'max_num_iteration': iterations,
+        'population_size': 400,
+    }
+)
 
 
 start_pop = np.random.uniform(low = -500, high = 500, size = (400, dim))
