@@ -14,6 +14,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 - [Installation](#installation)
 - [Updates information](#updates-information)
   - [**Future**](#future)
+  - [6.7.7 refactor](#677-refactor)
   - [6.7.6 bug fix](#676-bug-fix)
   - [6.7.5 refactor](#675-refactor)
   - [6.7.4 bug fix](#674-bug-fix)
@@ -130,6 +131,10 @@ pip3 install geneticalgorithm2
 - duplicates removing and revolutions will be moved to `MiddleCallbacks` and removed as alone `run()` parameters
 - `function_timeout` and `function` will be moved to `run()` method
 - new stop criteria callbacks (min std, max functions evaluations)
+
+## 6.7.7 refactor
+
+- change some behavior about parents selection
 
 ## 6.7.6 bug fix
 
@@ -1174,7 +1179,7 @@ There is an amazing way to control optimization process using `MiddleCallbacks` 
         selection=self.selection,
 
         current_stagnation=counter,
-        max_stagnation=self.count_stagnation,
+        max_stagnation=self.max_stagnations,
 
         parents_portion=self.param.parents_portion,
         elit_ratio=self.param.elit_ratio,
