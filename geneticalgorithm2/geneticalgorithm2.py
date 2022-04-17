@@ -479,10 +479,10 @@ class geneticalgorithm2:
         self._set_mutation_indexes(mutation_indexes)
         set_seed(seed)
 
-        show_progress = (lambda t, t2, s: self.__progress(t, t2, status=s)) if not disable_progress_bar else (lambda t, t2, s: None)
+        # randomstate = np.random.default_rng(random.randint(0, 1000) if seed is None else seed)
+        # self.randomstate = randomstate
 
-        # gets indexes of 2 parents to crossover
-        get_parents_inds = (lambda par_count: (0, random.randrange(1, par_count))) if studEA else (lambda par_count: tuple(random.sample(range(par_count), 2)))
+        show_progress = (lambda t, t2, s: self.__progress(t, t2, status=s)) if not disable_progress_bar else (lambda t, t2, s: None)
         
         stop_by_val = (lambda best_f: False) if stop_when_reached is None else (lambda best_f: best_f <= stop_when_reached)
 
@@ -769,6 +769,12 @@ class geneticalgorithm2:
         count_stagnation = 0  # iterations without progress
         reason_to_stop: Optional[str] = None
 
+        par_count_for_crossover = fast_max(2, math.floor(self.parents_count * self.prob_cross))  # at least 2 parents
+        # gets indexes of 2 parents to crossover
+        get_parents_inds = (lambda: (0, random.randrange(1, par_count_for_crossover))) if studEA else (lambda: random.sample(range(par_count_for_crossover), 2))
+        if par_count_for_crossover == 2:
+            warnings.warn("selected only 2 parents for crossover!!! increase population size of parents portion or crossover probability")
+
         #  while no reason to stop
         while True:
 
@@ -822,11 +828,11 @@ class geneticalgorithm2:
             #
             #  select parents for crossover
             #
-            par_count = fast_max(2, math.floor(self.parents_count * self.prob_cross))  # at least 2 parents
+
             #  select random parents
             ef_par_list = np.random.choice(
                 np.arange(self.parents_count),
-                par_count,
+                par_count_for_crossover,
                 replace=False
             )
             ef_par = par[ef_par_list].copy()
@@ -840,7 +846,7 @@ class geneticalgorithm2:
             scores[parents_slice] = par_scores[parents_slice]
                 
             for k in range(self.parents_count, self.population_size, 2):
-                r1, r2 = get_parents_inds(par_count)
+                r1, r2 = get_parents_inds()
                 pvar1 = ef_par[r1]
                 pvar2 = ef_par[r2]
                 
