@@ -53,8 +53,11 @@ for p in probs:
 plot_several_lines(
     reports,
     colors=['red', 'blue', 'green', 'black', 'yellow', 'orange'],
-    labels=list(map(str, probs)),
-    save_as='./output/sense_of_crossover_prob__no_sense.png'
+    labels=[f"prob = {v}" for v in probs],
+    save_as='./output/sense_of_crossover_prob__no_sense.png',
+
+    title='result of different crossover probs',
+    ylabel='avg score'
 )
 
 

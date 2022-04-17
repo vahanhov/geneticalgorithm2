@@ -195,8 +195,12 @@ class geneticalgorithm2:
         assert self.param.mutation_discrete_probability is None or can_be_prob(self.param.mutation_discrete_probability)
         self.prob_mut_discrete = self.param.mutation_discrete_probability or self.prob_mut
 
-        assert can_be_prob(self.param.crossover_probability)
-        self.prob_cross = self.param.crossover_probability
+        if self.param.crossover_probability is not None:
+            warnings.warn(
+                f"crossover_probability is deprecated and will be removed in version 7. Reason: it's old and has no sense"
+            )
+            assert can_be_prob(self.param.crossover_probability)
+            self.prob_cross = self.param.crossover_probability
 
         #############################################################
         # input function

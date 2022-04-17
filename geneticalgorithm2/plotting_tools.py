@@ -24,7 +24,7 @@ def plot_several_lines(
     if labels is None:
         labels = list(map(str, range(len(lines))))
     if linewidths is None:
-        linewidths = [1] * len(lines)
+        linewidths = [1.5] * len(lines)
 
     for line, color, label, linewidth in zip(
         lines, colors, labels, linewidths
