@@ -71,7 +71,6 @@ class AlgorithmParams(DictLikeGetSet):
         assert int(self.population_size) > 0, f"population size must be integer and >0, not {self.population_size}"
         assert (can_be_prob(self.parents_portion)), "parents_portion must be in range [0,1]"
         assert (can_be_prob(self.mutation_probability)), "mutation_probability must be in range [0,1]"
-        assert (can_be_prob(self.crossover_probability)), "mutation_probability must be in range [0,1]"
         assert (can_be_prob(self.elit_ratio)), "elit_ratio must be in range [0,1]"
 
         if self.max_iteration_without_improv is not None and self.max_iteration_without_improv < 1:
@@ -266,7 +265,6 @@ class MiddleCallbackData(DictLikeGetSet):
 
     mutation_prob: float
     mutation_discrete_prob: float
-    crossover_prob: float
 
     mutation: Callable[[float, float, float], float]
     mutation_discrete: Callable[[int, int, int], int]

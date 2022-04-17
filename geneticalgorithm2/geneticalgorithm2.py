@@ -199,8 +199,6 @@ class geneticalgorithm2:
             warnings.warn(
                 f"crossover_probability is deprecated and will be removed in version 7. Reason: it's old and has no sense"
             )
-            assert can_be_prob(self.param.crossover_probability)
-            self.prob_cross = self.param.crossover_probability
 
         #############################################################
         # input function
@@ -269,8 +267,8 @@ class geneticalgorithm2:
     def _set_parents_count(self, parents_portion: float):
 
         self.parents_count = int(parents_portion * self.population_size)
-        assert self.parents_count <= self.population_size, f'parents count {self.parents_count} cannot be less than population size {self.population_size}'
-        trl= self.population_size - self.parents_count
+        assert self.parents_count <= self.population_size and self.parents_count > 1, f'parents count {self.parents_count} cannot be less than population size {self.population_size}'
+        trl = self.population_size - self.parents_count
         if trl % 2 != 0:
             self.parents_count += 1
 
@@ -507,7 +505,6 @@ class geneticalgorithm2:
 
                 mutation_prob=self.prob_mut,
                 mutation_discrete_prob=self.prob_mut_discrete,
-                crossover_prob=self.prob_cross,
                 mutation=self.real_mutation,
                 mutation_discrete=self.discrete_mutation,
                 crossover=self.crossover,
@@ -541,7 +538,6 @@ class geneticalgorithm2:
 
             self.prob_mut = data.mutation_prob
             self.prob_mut_discrete = data.mutation_discrete_prob
-            self.prob_cross = data.crossover_prob
             self.real_mutation = data.mutation
             self.discrete_mutation = data.mutation_discrete
             self.crossover = data.crossover
@@ -772,11 +768,8 @@ class geneticalgorithm2:
         count_stagnation = 0  # iterations without progress
         reason_to_stop: Optional[str] = None
 
-        par_count_for_crossover = fast_max(2, math.floor(self.parents_count * self.prob_cross))  # at least 2 parents
         # gets indexes of 2 parents to crossover
-        get_parents_inds = (lambda: (0, random.randrange(1, par_count_for_crossover))) if studEA else (lambda: random.sample(range(par_count_for_crossover), 2))
-        if par_count_for_crossover == 2:
-            warnings.warn("selected only 2 parents for crossover!!! increase population size of parents portion or crossover probability")
+        get_parents_inds = (lambda: (0, random.randrange(1, self.parents_count))) if studEA else (lambda: random.sample(range(self.parents_count), 2))
 
         #  while no reason to stop
         while True:
@@ -823,23 +816,11 @@ class geneticalgorithm2:
             par_scores[elit_slice] = scores[elit_slice].copy()
                 
             # non-elit parents indexes
-            #new_par_inds = self.selection(scores[self.elit_count:], self.parents_count - self.elit_count).astype(np.int16) + self.elit_count
-            new_par_inds = self.selection(scores, self.parents_count - self.elit_count).astype(np.int16)
+            new_par_inds = self.selection(scores[self.elit_count:], self.parents_count - self.elit_count).astype(np.int16) + self.elit_count
+            #new_par_inds = self.selection(scores, self.parents_count - self.elit_count).astype(np.int16)
             par_slice = slice(self.elit_count, self.parents_count)
             par[par_slice] = pop[new_par_inds].copy()
             par_scores[par_slice] = scores[new_par_inds].copy()
-
-            #
-            #  select parents for crossover
-            #
-
-            #  select random parents
-            ef_par_list = np.random.choice(
-                np.arange(self.parents_count),
-                par_count_for_crossover,
-                replace=False
-            )
-            ef_par = par[ef_par_list].copy()
 
             # New generation
             pop = np.empty((self.population_size, self.dim))
@@ -851,8 +832,8 @@ class geneticalgorithm2:
                 
             for k in range(self.parents_count, self.population_size, 2):
                 r1, r2 = get_parents_inds()
-                pvar1 = ef_par[r1]
-                pvar2 = ef_par[r2]
+                pvar1 = par[r1]
+                pvar2 = par[r2]
                 
                 ch1, ch2 = self.crossover(pvar1, pvar2)
                 

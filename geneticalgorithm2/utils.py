@@ -20,11 +20,12 @@ def fast_max(a, b):
 
 
 def mkdir(folder: str):
-    Path(folder).mkdir(parents = True, exist_ok=True)
+    Path(folder).mkdir(parents=True, exist_ok=True)
 
 
 def can_be_prob(value: float):
-    return value >=0 and value <=1
+    return 0 <= value <= 1
+
 
 def is_current_gen_number(number):
     return (number is None) or (type(number) == int and number > 0)
@@ -32,7 +33,6 @@ def is_current_gen_number(number):
 
 def is_numpy(arg):
     return type(arg) == np.ndarray
-
 
 
 def split_matrix(mat: np.ndarray):
