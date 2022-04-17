@@ -108,7 +108,7 @@ Features of this package:
 * easy to logging
 * many plotting functions
 * many cases of crossover, mutation and selection
-* support of integer, boolean and real (continious/discrete) variables types
+* support of integer, boolean and real (continuous/discrete) variables types
 * support of mixed types of variables
 * support of elitist and studEA genetic algorithm
 * support of revolutions   
@@ -135,7 +135,7 @@ pip3 install geneticalgorithm2
 
 ## 6.8.0 minor update
 
-- remove `crossover_probability` model parameter because of it has no sence to exist (and 1.0 value is better than others, take a look at [results](/tests/output/sense_of_crossover_prob__no_sense.png)). This parameter came from `geneticalgorithm` old package.
+- remove `crossover_probability` model parameter because of it has no sense to exist (and 1.0 value is better than others, take a look at [results](/tests/output/sense_of_crossover_prob__no_sense.png)). This parameter came from `geneticalgorithm` old package and did`t change before.
 
 ## 6.7.7 refactor
 
@@ -299,7 +299,6 @@ model = ga(function, dimension = 3,
                                        'mutation_probability': 0.1,
                                        'mutation_discrete_probability': None,
                                        'elit_ratio': 0.01,
-                                       'crossover_probability': 0.5,
                                        'parents_portion': 0.3,
                                        'crossover_type':'uniform',
                                        'mutation_type': 'uniform_by_center',
@@ -320,7 +319,6 @@ model = ga(function, dimension = 3,
                      mutation_probability = 0.1,
                      mutation_discrete_probability = None,
                      elit_ratio = 0.01,
-                     crossover_probability = 0.5,
                      parents_portion = 0.3,
                      crossover_type = 'uniform',
                      mutation_type = 'uniform_by_center',
@@ -406,7 +404,6 @@ For example, when there is an infinite loop in the given function.
     * @ **mutation_probability** (`float in [0,1]`)
     * @ **mutation_discrete_probability** (`float in [0,1]` or `None`)
     * @ **elit_ration** (`float in [0,1]`) - part of elit objects in population; if > 0, there always will be 1 elit object at least  
-    * @ **crossover_probability** (`float in [0,1]`) 
     * @ **parents_portion** (`float in [0,1]`) - part of parents from previous population to save in next population (including `elit_ration`)  
     * @ **crossover_type** (`Union[str, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]]`) - Default is `uniform`.
     * @ **mutation_type** (`Union[str, Callable[[float, float, float], float]]`) - Default is `uniform_by_center`
@@ -428,7 +425,6 @@ algorithm_param = AlgorithmParams(
                 mutation_probability = 0.1,
                 mutation_discrete_probability = None,
                 elit_ratio = 0.01,
-                crossover_probability = 0.5,
                 parents_portion = 0.3,
                 crossover_type = 'uniform',
                 mutation_type = 'uniform_by_center',
@@ -447,7 +443,6 @@ algorithm_param = {
                    'mutation_probability': 0.1,
                    'mutation_discrete_probability': None,
                    'elit_ratio': 0.01,
-                   'crossover_probability': 0.5,
                    'parents_portion': 0.3,
                    'crossover_type':'uniform',
                    'mutation_type': 'uniform_by_center',
@@ -485,7 +480,6 @@ algorithm_param = {'max_num_iteration': 3000,
                    'mutation_probability': 0.1,
                    'mutation_discrete_probability': None,
                    'elit_ratio': 0.01,
-                   'crossover_probability': 0.5,
                    'parents_portion': 0.3,
                    'crossover_type':'uniform',
                    'mutation_type': 'uniform_by_center',
@@ -514,7 +508,6 @@ algorithm_param = {'max_num_iteration': 150,
                    'mutation_probability': 0.1,
                    'mutation_discrete_probability': None,
                    'elit_ratio': 0.01,
-                   'crossover_probability': 0.5,
                    'parents_portion': 0.3,
                    'crossover_type':'uniform',
                    'mutation_type': 'uniform_by_center',
@@ -541,8 +534,6 @@ If this parameter's value is `None` the algorithm sets maximum number of iterati
 * **max_iteration_without_improv**: if the algorithms does not improve the objective function over the number of successive iterations determined by this parameter, then GA stops and report the best found solution before the `max_num_iterations` to be met. The default value is `None`. 
 
 #### **Crossover**
-
-* **crossover_probability**: determines the chance of an existed solution to pass its genome (aka characteristics) to new trial solutions (aka offspring); the default value is 0.5 (i.e. 50 percent)
 
 * **crossover_type**: there are several options including `'one_point'`, `'two_point'`, `'uniform'`, `'segment'`, `'shuffle'` crossover functions; default is `'uniform'` crossover. U also can use crossover as functions from `Crossover` class:
     * `Crossover.one_point()`
@@ -893,7 +884,6 @@ model = ga(function=f,
                        'max_num_iteration': 500,
                        'mutation_probability': 0, # no mutation, just crossover
                        'elit_ratio': 0.05,
-                       'crossover_probability': 0.5,
                        'parents_portion': 0.3,
                        'crossover_type': my_crossover,
                        'max_iteration_without_improv': 20
@@ -1491,7 +1481,6 @@ algorithm_param = {'max_num_iteration': 50,
                    'population_size':100,
                    'mutation_probability':0.1,
                    'elit_ratio': 0.01,
-                   'crossover_probability': 0.5,
                    'parents_portion': 0.3,
                    'crossover_type':'uniform',
                    'mutation_type': 'uniform_by_center',
@@ -1534,7 +1523,6 @@ algorithm_param = {'max_num_iteration': 500,
                    'population_size':100,
                    'mutation_probability':0.1,
                    'elit_ratio': 0.01,
-                   'crossover_probability': 0.5,
                    'parents_portion': 0.3,
                    'crossover_type':'uniform',
                    'max_iteration_without_improv':None}

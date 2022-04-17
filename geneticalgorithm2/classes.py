@@ -58,7 +58,7 @@ class AlgorithmParams(DictLikeGetSet):
     #  deprecated
     crossover_probability: Optional[float] = None
 
-    elit_ratio: float = 0.01
+    elit_ratio: float = 0.04
     parents_portion: float = 0.3
 
     crossover_type: Union[str, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]] = 'uniform'
