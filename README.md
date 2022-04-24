@@ -14,6 +14,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 - [Installation](#installation)
 - [Updates information](#updates-information)
   - [**Future**](#future)
+  - [6.8.1 patch](#681-patch)
   - [6.8.0 minor update](#680-minor-update)
   - [6.7.7 refactor](#677-refactor)
   - [6.7.6 bug fix](#676-bug-fix)
@@ -132,6 +133,12 @@ pip3 install geneticalgorithm2
 - duplicates removing and revolutions will be moved to `MiddleCallbacks` and removed as alone `run()` parameters
 - `function_timeout` and `function` will be moved to `run()` method
 - new stop criteria callbacks (min std, max functions evaluations)
+
+## 6.8.1 patch
+
+- printing progress bar to `'stderr'` or `'stdout'` or `None` (disable) by choice (`progress_bar_stream` argument of `run()`), deprecated `disable_progress_bar`
+- little speed up
+- new `geneticalgorithm2.vectorized_set_function` set function, which can be faster for big populations 
 
 ## 6.8.0 minor update
 
@@ -344,7 +351,7 @@ model = ga(function, dimension = 3,
 # all of this parameters are default
 result = model.run(
     no_plot = False, 
-    disable_progress_bar = False,
+    progress_bar_stream = 'stdout',
     disable_printing = False,
 
     set_function = None, 
@@ -605,7 +612,7 @@ The main method if **run()**. It has parameters:
 
 * **no_plot** (`bool`) - do not plot results using matplotlib by default
 
-* **disable_progress_bar** (`bool`) - do not show progress bar (also it can be faster by 10-20 seconds)
+* **progress_bar_stream** (`Optional[str]`) - `'stdout'` to print progress bar to `stdout`, `'stderr'` for `stderr`, `None` to disable progress bar (also it can be faster by 10-20 seconds)
 
 * **disable_printing** (`bool`) - don't print any text (except progress bar)
 

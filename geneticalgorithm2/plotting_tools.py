@@ -15,6 +15,8 @@ def plot_several_lines(
     save_as: Optional[str] = None,
     dpi: int = 200
 ):
+    # import matplotlib
+    # matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from matplotlib.ticker import MaxNLocator
 
@@ -50,7 +52,8 @@ def plot_pop_scores(scores, title: str = 'Population scores', save_as: Optional[
     """
     plots scores (numeric values) as sorted bars
     """
-
+    # import matplotlib
+    # matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     import matplotlib.cm as cm
     from matplotlib.colors import Normalize

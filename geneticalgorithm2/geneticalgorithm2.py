@@ -161,6 +161,7 @@ class geneticalgorithm2:
         self.checked_reports: List[Tuple[str, Callable[[np.ndarray], None]]] = None
 
         self.population_size: int = None
+        self.progress_stream = None
 
 
         # input algorithm's parameters
@@ -353,8 +354,8 @@ class geneticalgorithm2:
         percents = round(100.0 * part, 1)
         bar = '|' * filled_len + '_' * (geneticalgorithm2.PROGRESS_BAR_LEN - filled_len)
 
-        sys.stdout.write('\r%s %s%s %s' % (bar, percents, '%', status))
-        sys.stdout.flush()
+        self.progress_stream.write('\r%s %s%s %s' % (bar, percents, '%', status))
+        self.progress_stream.flush()
 
     def __str__(self):
         return f"Genetic algorithm object with parameters {self.param}"
@@ -400,8 +401,11 @@ class geneticalgorithm2:
     def run(
         self,
         no_plot: bool = False,
-        disable_progress_bar: bool = False,
         disable_printing: bool = False,
+        progress_bar_stream: Optional[str] = 'stdout',
+
+        # deprecated
+        disable_progress_bar: bool = False,
 
         set_function: Optional[Callable[[np.ndarray], np.ndarray]] = None,
         apply_function_to_parents: bool = False,
@@ -431,7 +435,7 @@ class geneticalgorithm2:
         """
         @param no_plot <boolean> - do not plot results using matplotlib by default
         
-        @param disable_progress_bar <boolean> - do not show progress bar
+        @param progress_bar_stream -- 'stdout', 'stderr' or None to disable progress bar
                 
         @param set_function : 2D-array -> 1D-array function, which applyes to matrix of population (size (samples, dimention))
         to estimate their values
@@ -468,6 +472,12 @@ class geneticalgorithm2:
         @param seed (None/int) - random seed (None if doesn't matter)
         """
 
+        if disable_progress_bar:
+            warnings.warn(
+                f"disable_progress_bar is deprecated and will be removed in version 7, use probress_bar_stream=None to disable progress bar"
+            )
+            progress_bar_stream = None
+
         start_generation = Generation.from_object(self.dim, start_generation)
 
 
@@ -485,8 +495,17 @@ class geneticalgorithm2:
         # randomstate = np.random.default_rng(random.randint(0, 1000) if seed is None else seed)
         # self.randomstate = randomstate
 
-        show_progress = (lambda t, t2, s: self.__progress(t, t2, status=s)) if not disable_progress_bar else (lambda t, t2, s: None)
-        
+        show_progress = (lambda t, t2, s: self.__progress(t, t2, status=s)) if progress_bar_stream is not None else (lambda t, t2, s: None)
+        if progress_bar_stream is not None:
+            if progress_bar_stream == 'stdout':
+                self.progress_stream = sys.stdout
+            elif progress_bar_stream == 'stderr':
+                self.progress_stream = sys.stderr
+            else:
+                raise Exception(
+                    f"wrong value {progress_bar_stream} of progress_bar_stream, must be 'stdout'/'stderr'/None"
+                )
+
         stop_by_val = (lambda best_f: False) if stop_when_reached is None else (lambda best_f: best_f <= stop_when_reached)
 
         t = 0
@@ -829,7 +848,8 @@ class geneticalgorithm2:
             parents_slice = slice(None, self.parents_count)
             pop[parents_slice] = par[parents_slice]
             scores[parents_slice] = par_scores[parents_slice]
-                
+
+            DO_MUTATION = self.needs_mutation
             for k in range(self.parents_count, self.population_size, 2):
                 r1, r2 = get_parents_inds()
                 pvar1 = par[r1]
@@ -837,7 +857,7 @@ class geneticalgorithm2:
                 
                 ch1, ch2 = self.crossover(pvar1, pvar2)
                 
-                if self.needs_mutation:
+                if DO_MUTATION:
                     ch1 = self.mut(ch1)
                     ch2 = self.mut_middle(ch2, pvar1, pvar2)               
 
@@ -982,6 +1002,16 @@ class geneticalgorithm2:
         """
         def func(matrix: np.ndarray):
             return np.array([function_for_set(matrix[i]) for i in range(matrix.shape[0])])
+        return func
+
+    @staticmethod
+    def vectorized_set_function(function_for_set: Callable[[np.ndarray], float]):
+        """
+        works like default, but faster for big populations and slower for little
+        function_for_set just applyes to each row of population
+        """
+
+        func = np.vectorize(function_for_set, signature='(n)->()')
         return func
 
     @staticmethod

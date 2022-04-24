@@ -22,7 +22,7 @@ model = ga(function=f, dimension=20, variable_type='real', variable_boundaries=v
 
 result = model.run(
     no_plot = True,
-    disable_progress_bar=True,
+    progress_bar_stream=None,
     disable_printing=True
 )
 
