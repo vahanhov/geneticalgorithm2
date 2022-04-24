@@ -351,7 +351,7 @@ model = ga(function, dimension = 3,
 # all of this parameters are default
 result = model.run(
     no_plot = False, 
-    disable_progress_bar = False,
+    progress_bar_stream = 'stdout',
     disable_printing = False,
 
     set_function = None, 
@@ -612,7 +612,7 @@ The main method if **run()**. It has parameters:
 
 * **no_plot** (`bool`) - do not plot results using matplotlib by default
 
-* **disable_progress_bar** (`bool`) - do not show progress bar (also it can be faster by 10-20 seconds)
+* **progress_bar_stream** (`Optional[str]`) - `'stdout'` to print progress bar to `stdout`, `'stderr'` for `stderr`, `None` to disable progress bar (also it can be faster by 10-20 seconds)
 
 * **disable_printing** (`bool`) - don't print any text (except progress bar)
 
