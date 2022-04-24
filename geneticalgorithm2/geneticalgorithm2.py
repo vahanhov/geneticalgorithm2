@@ -848,7 +848,8 @@ class geneticalgorithm2:
             parents_slice = slice(None, self.parents_count)
             pop[parents_slice] = par[parents_slice]
             scores[parents_slice] = par_scores[parents_slice]
-                
+
+            DO_MUTATION = self.needs_mutation
             for k in range(self.parents_count, self.population_size, 2):
                 r1, r2 = get_parents_inds()
                 pvar1 = par[r1]
@@ -856,7 +857,7 @@ class geneticalgorithm2:
                 
                 ch1, ch2 = self.crossover(pvar1, pvar2)
                 
-                if self.needs_mutation:
+                if DO_MUTATION:
                     ch1 = self.mut(ch1)
                     ch2 = self.mut_middle(ch2, pvar1, pvar2)               
 
@@ -1001,6 +1002,16 @@ class geneticalgorithm2:
         """
         def func(matrix: np.ndarray):
             return np.array([function_for_set(matrix[i]) for i in range(matrix.shape[0])])
+        return func
+
+    @staticmethod
+    def vectorized_set_function(function_for_set: Callable[[np.ndarray], float]):
+        """
+        works like default, but faster for big populations and slower for little
+        function_for_set just applyes to each row of population
+        """
+
+        func = np.vectorize(function_for_set, signature='(n)->()')
         return func
 
     @staticmethod
