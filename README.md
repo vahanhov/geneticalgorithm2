@@ -135,6 +135,11 @@ pip3 install geneticalgorithm2
 
 ## 6.8.1 patch
 
+- for printing info
+- fix logic: now population is always sorted before going to callbacks
+
+## 6.8.1 patch
+
 - printing progress bar to `'stderr'` or `'stdout'` or `None` (disable) by choice (`progress_bar_stream` argument of `run()`), deprecated `disable_progress_bar`
 - little speed up
 - new `geneticalgorithm2.vectorized_set_function` set function, which can be faster for big populations 

@@ -433,43 +433,44 @@ class geneticalgorithm2:
         seed: Optional[int] = None
     ):
         """
-        @param no_plot <boolean> - do not plot results using matplotlib by default
+        runs optimization process
+
+        @param no_plot: do not plot results using matplotlib by default
         
-        @param progress_bar_stream -- 'stdout', 'stderr' or None to disable progress bar
+        @param progress_bar_stream: 'stdout', 'stderr' or None to disable progress bar
                 
         @param set_function : 2D-array -> 1D-array function, which applyes to matrix of population (size (samples, dimention))
         to estimate their values
         
-        @param apply_function_to_parents <boolean> - apply function to parents from previous generation (if it's needed)
+        @param apply_function_to_parents: apply function to parents from previous generation (if it's needed)
                                                                                                          
-        @param start_generation <dictionary/str/Generation object> - Generation object or a dictionary with structure {'variables':2D-array of samples, 'scores': function values on samples} or path to .npz file (str) with saved generation
-        if 'scores' value is None the scores will be compute
+        @param start_generation: Generation object or a dictionary with structure {'variables':2D-array of samples, 'scores': function values on samples} or path to .npz file (str) with saved generation; if 'scores' value is None the scores will be compute
 
-        @param studEA <boolean> - using stud EA strategy (crossover with best object always)
+        @param studEA: using stud EA strategy (crossover with best object always)
         
-        @param mutation_indexes <Optional[Union[Sequence[int], Set[int]]]> - indexes of dimensions where mutation can be performed (all dimensions by default)
+        @param mutation_indexes: indexes of dimensions where mutation can be performed (all dimensions by default)
 
-        @param init_creator: Optional[Callable[[], np.ndarray]], the function creates population samples. By default -- random uniform for real variables and random uniform for int
-        @param init_oppositors: Optional[Sequence[Callable[[np.ndarray], np.ndarray]]]t, the list of oppositors creates oppositions for base population. No by default
-        @param duplicates_oppositor: Optional[Callable[[np.ndarray], np.ndarray]], oppositor for applying after duplicates removing. By default -- using just random initializer from creator
+        @param init_creator: the function creates population samples. By default -- random uniform for real variables and random uniform for int
+        @param init_oppositors: the list of oppositors creates oppositions for base population. No by default
+        @param duplicates_oppositor: oppositor for applying after duplicates removing. By default -- using just random initializer from creator
         @param remove_duplicates_generation_step: None/int, step for removing duplicates (have a sense with discrete tasks). No by default
-        @param revolution_oppositor = Optional[Callable[[np.ndarray], np.ndarray]], oppositor for revolution time. No by default
-        @param revolution_after_stagnation_step = None/int, create revolution after this generations of stagnation. No by default
+        @param revolution_oppositor: oppositor for revolution time. No by default
+        @param revolution_after_stagnation_step: create revolution after this generations of stagnation. No by default
         @param revolution_part: float, the part of generation to being oppose. By default is 0.3
 
-        @param population_initializer (Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]]) - object for actions at population initialization step to create better start population. See doc
+        @param population_initializer: object for actions at population initialization step to create better start population. See doc
 
-        @param stop_when_reached (None/float) - stop searching after reaching this value (it can be potential minimum or something else)
+        @param stop_when_reached: stop searching after reaching this value (it can be potential minimum or something else)
 
-        @param callbacks (Optional[Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]]]) - sequence of callback functions with structure: (generation_number, report_list, last_population, last_scores) -> do some action
+        @param callbacks: sequence of callback functions with structure: (generation_number, report_list, last_population, last_scores) -> do some action
 
-        @param middle_callbacks (Optional[Sequence]) - sequence of functions made MiddleCallbacks class
+        @param middle_callbacks: sequence of functions made MiddleCallbacks class
 
-        @param time_limit_secs (Optional[float] / number>0) - limit time of working (in seconds)
+        @param time_limit_secs: limit time of working (in seconds)
 
-        @param save_last_generation_as (Optional[str]) - path to .npz file for saving last_generation as numpy dictionary like {'population': 2D-array, 'scores': 1D-array}, None if doesn't need to save in file
+        @param save_last_generation_as: path to .npz file for saving last_generation as numpy dictionary like {'population': 2D-array, 'scores': 1D-array}, None if doesn't need to save in file
 
-        @param seed (None/int) - random seed (None if doesn't matter)
+        @param seed: random seed (None if doesn't matter)
         """
 
         if disable_progress_bar:
@@ -478,8 +479,9 @@ class geneticalgorithm2:
             )
             progress_bar_stream = None
 
-        start_generation = Generation.from_object(self.dim, start_generation)
+        enable_printing = not disable_printing
 
+        start_generation = Generation.from_object(self.dim, start_generation)
 
         assert is_current_gen_number(revolution_after_stagnation_step), "must be None or int and >0"
         assert is_current_gen_number(remove_duplicates_generation_step), "must be None or int and >0"
@@ -512,6 +514,12 @@ class geneticalgorithm2:
         count_stagnation = 0
         pop: np.ndarray = None
         scores: np.ndarray = None
+
+        #
+        #
+        # callbacks part
+        #
+        #
 
         def get_data():
             """
@@ -568,14 +576,19 @@ class geneticalgorithm2:
 
             self.set_function = data.set_function
 
-        if callbacks is None or len(callbacks) == 0:
+        if not callbacks:
             total_callback = lambda g, r, lp, ls: None
         else:
-            def total_callback(generation_number, report_list, last_population, last_scores):
+            def total_callback(
+                generation_number: int,
+                report_list: List[float],
+                last_population: np.ndarray,
+                last_scores: np.ndarray
+            ):
                 for cb in callbacks:
                     cb(generation_number, report_list, last_population, last_scores)
 
-        if middle_callbacks is None or len(middle_callbacks) == 0:
+        if not middle_callbacks:
             total_middle_callback = lambda: None
         else:
             def total_middle_callback():
@@ -590,6 +603,8 @@ class geneticalgorithm2:
                         flag = True
                 if flag:
                     set_data(data)  # update global date if there was real callback step
+
+        ############################################################
 
         start_time = time.time()
         time_is_done = (lambda: False) if time_limit_secs is None else (lambda: int(time.time() - start_time) >= time_limit_secs)
@@ -694,7 +709,6 @@ class geneticalgorithm2:
                     args_to_sort = new_scores.argsort()
                     return new_pop[args_to_sort], new_scores[args_to_sort]
 
-
         # event for revolution
         if revolution_after_stagnation_step is None:
             def revolution(pop: np.ndarray, scores: np.ndarray, stagnation_count: int) -> Tuple[
@@ -739,7 +753,6 @@ class geneticalgorithm2:
         self._clear_report()  # clear old report objects
         self._init_report()
 
-
         # initialization of pop
         
         if start_generation.variables is None:
@@ -763,8 +776,10 @@ class geneticalgorithm2:
                 scores[p] = value
                 time_counter += eval_time
             
-            if not disable_printing:
-                print(f"\n\r Average time of function evaluating (secs): {time_counter/real_pop_size}\n")
+            if enable_printing:
+                print(
+                    f"\nAverage time of function evaluating (secs): {time_counter/real_pop_size} (total = {time_counter})\n"
+                )
                 
         else:
 
@@ -773,15 +788,40 @@ class geneticalgorithm2:
             self._set_parents_count(self.param.parents_portion)
 
             pop = start_generation.variables
-            scores = self.set_function(pop) if start_generation.scores is None else start_generation.scores
 
-        
+            if start_generation.scores is None:
+
+                _time = time.time()
+                scores = self.set_function(pop)
+                _time = time.time() - _time
+
+                if enable_printing:
+                    print(
+                        f'\nFirst scores are made from gotten variables (by {_time} secs, about {_time/scores.size} for each creature)\n'
+                    )
+            else:
+                scores = start_generation.scores
+                if enable_printing:
+                    print(f"\nFirst scores are from gotten population\n")
+
+
         # Initialization by select bests and local_descent
         
         pop, scores = initializer_func(pop, scores)
 
+        # first sort
+        args_to_sort = scores.argsort()
+        pop = pop[args_to_sort]
+        scores = scores[args_to_sort]
+        self._update_report(scores)
+
         self.population_size = scores.size
-        self.best_function = scores.min()
+        self.best_function = scores[0]
+
+        if enable_printing:
+            print(
+                f"Best score before optimization: {self.best_function}"
+            )
 
         t = 1
         count_stagnation = 0  # iterations without progress
@@ -792,11 +832,6 @@ class geneticalgorithm2:
 
         #  while no reason to stop
         while True:
-
-            args_to_sort = scores.argsort()
-            pop = pop[args_to_sort]
-            scores = scores[args_to_sort]
-            self._update_report(scores)
 
             if count_stagnation > self.max_stagnations:
                 reason_to_stop = f"limit of fails: {count_stagnation}"
@@ -874,6 +909,13 @@ class geneticalgorithm2:
             # revolution
             pop, scores = revolution(pop, scores, count_stagnation)
 
+            # make population better
+            args_to_sort = scores.argsort()
+            pop = pop[args_to_sort]
+            scores = scores[args_to_sort]
+            self._update_report(scores)
+
+            # callback it
             total_callback(t, self.report, pop, scores)
             total_middle_callback()
 
@@ -887,7 +929,7 @@ class geneticalgorithm2:
         if save_last_generation_as is not None:
             last_generation.save(save_last_generation_as)
 
-        if not disable_printing:
+        if enable_printing:
             show = ' '*200
             sys.stdout.write(f'\r{show}\n')
             sys.stdout.write(f'\r The best found solution:\n {pop[0]}')
@@ -899,7 +941,7 @@ class geneticalgorithm2:
         if not no_plot:
             self.plot_results()
 
-        if not disable_printing:
+        if enable_printing:
             if reason_to_stop is not None and 'iterations' not in reason_to_stop:
                 sys.stdout.write(
                     f'\nWarning: GA is terminated because of {reason_to_stop}'
