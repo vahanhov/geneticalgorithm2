@@ -13,6 +13,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 - [Installation](#installation)
 - [Updates information](#updates-information)
   - [**Future**](#future)
+  - [6.8.2 patch](#682-patch)
   - [6.8.1 patch](#681-patch)
   - [6.8.0 minor update](#680-minor-update)
   - [6.7.7 refactor](#677-refactor)
@@ -133,7 +134,7 @@ pip3 install geneticalgorithm2
 - `function_timeout` and `function` will be moved to `run()` method
 - new stop criteria callbacks (min std, max functions evaluations)
 
-## 6.8.1 patch
+## 6.8.2 patch
 
 - for printing info
 - fix logic: now population is always sorted before going to callbacks
