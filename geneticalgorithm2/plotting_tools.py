@@ -48,7 +48,7 @@ def plot_several_lines(
 
     plt.show()
 
-def plot_pop_scores(scores, title: str = 'Population scores', save_as: Optional[str] = None):
+def plot_pop_scores(scores: Sequence[float], title: str = 'Population scores', save_as: Optional[str] = None):
     """
     plots scores (numeric values) as sorted bars
     """

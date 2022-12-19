@@ -1,11 +1,11 @@
 
+from typing import Optional, Any, Tuple
 
-
-import os
 from pathlib import Path
 
-
 import numpy as np
+
+from .aliases import array1D, array2D
 
 
 def fast_min(a, b):
@@ -23,26 +23,26 @@ def mkdir(folder: str):
     Path(folder).mkdir(parents=True, exist_ok=True)
 
 
-def can_be_prob(value: float):
+def can_be_prob(value: float) -> bool:
     return 0 <= value <= 1
 
 
-def is_current_gen_number(number):
+def is_current_gen_number(number: Optional[int]):
     return (number is None) or (type(number) == int and number > 0)
 
 
-def is_numpy(arg):
+def is_numpy(arg: Any):
     return type(arg) == np.ndarray
 
 
-def split_matrix(mat: np.ndarray):
+def split_matrix(mat: array2D) -> Tuple[array2D, array1D]:
     """
     splits wide pop matrix to variables and scores
     """
     return mat[:, :-1], mat[:, -1]
 
 
-def union_to_matrix(variables_2D: np.ndarray, scores_1D: np.ndarray):
+def union_to_matrix(variables_2D: array2D, scores_1D: array1D) -> array2D:
     """
     union variables and scores to wide pop matrix
     """

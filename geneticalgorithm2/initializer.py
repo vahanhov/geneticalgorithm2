@@ -1,23 +1,24 @@
 
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional, Tuple, Literal
 
 import numpy as np
 
+from .aliases import TypeAlias, array1D, array2D
 
 
-_local_opt_valid_steps = ('before_select', 'after_select', 'never')
+LOCAL_OPT_STEPS: TypeAlias = Literal['before_select', 'after_select', 'never']
 
 
 def Population_initializer(
     select_best_of: int = 4,
-    local_optimization_step: str = 'never',
+    local_optimization_step: LOCAL_OPT_STEPS = 'never',
     local_optimizer: Optional[
         Callable[
-            [np.ndarray, float],
-            Tuple[np.ndarray, float]
+            [array1D, float],
+            Tuple[array1D, float]
         ]
     ] = None
-) -> Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]]:
+) -> Tuple[int, Callable[[array2D, array1D], Tuple[array2D, array1D]]]:
     """
     select_best_of (int) -- select 1/select_best_of best part of start population. For example, for select_best_of = 4 and population_size = N will be selected N best objects from 5N generated objects (if start_generation = None dictionary). If start_generation is not None dictionary, it will be selected best size(start_generation)/N  objects
 
@@ -33,25 +34,26 @@ def Population_initializer(
             return better_object_as_array, better_score
     """
     
-    
     assert (select_best_of > 0 and type(select_best_of) == int), "select_best_of argument should be integer and more than 0"
 
-    assert (local_optimization_step in _local_opt_valid_steps), f"local_optimization_step should be in {_local_opt_valid_steps}, but got {local_optimization_step}"
+    assert (local_optimization_step in LOCAL_OPT_STEPS.__args__), f"local_optimization_step should be in {LOCAL_OPT_STEPS.__args__}, but got {local_optimization_step}"
 
-    if local_optimizer is None and local_optimization_step in _local_opt_valid_steps[:2]:
-        raise Exception(f"for local_optimization_step from {_local_opt_valid_steps[:2]} local_optimizer function mustn't be None")
+    if local_optimizer is None and local_optimization_step in LOCAL_OPT_STEPS.__args__[:2]:
+        raise Exception(f"for local_optimization_step from {LOCAL_OPT_STEPS.__args__[:2]} local_optimizer function mustn't be None")
 
 
-
-    def Select_best(population: np.ndarray, scores: np.ndarray):
+    def Select_best(population: array2D, scores: array1D) -> Tuple[array2D, array1D]:
         args = np.argsort(scores)
         args = args[:round(args.size/select_best_of)]
-        return population[args, :], scores[args]
+        return population[args], scores[args]
 
-    def Local_opt(population: np.ndarray, scores: np.ndarray):
-        pairs = [local_optimizer(population[i, :], scores[i]) for i in range(scores.size)]
-
-        return np.array([p[0] for p in pairs]), np.array([p[1] for p in pairs])
+    def Local_opt(population: array2D, scores: array1D):
+        _pop, _score = zip(
+            *[
+                local_optimizer(population[i], scores[i]) for i in range(scores.size)
+            ]
+        )
+        return np.array(_pop), np.array(_score)
 
 
     #def Create_population(func, start_generation, expected_size, #variable_boundaries):
@@ -64,7 +66,7 @@ def Population_initializer(
     #        return pop, scores
 
 
-    def Result(population: np.ndarray, scores: np.ndarray):
+    def Result(population: array2D, scores: array1D):
         if local_optimization_step == 'before_select':
             pop, s = Local_opt(population, scores)
             return Select_best(pop, s)

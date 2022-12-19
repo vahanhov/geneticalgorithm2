@@ -1,5 +1,5 @@
 
-
+from typing import Callable
 
 import numpy as np
 
@@ -7,6 +7,7 @@ from functools import lru_cache, wraps
 
 #from fastcache import clru_cache
 
+from .aliases import array1D
 
 
 def np_lru_cache(*args, **kwargs):
@@ -15,11 +16,11 @@ def np_lru_cache(*args, **kwargs):
         forked from: https://gist.github.com/Susensio/61f4fee01150caaac1e10fc5f005eb75
     """
 
-    def decorator(function):
+    def decorator(function: Callable):
         
         @wraps(function)
-        def wrapper(np_array):
-            return cached_wrapper( tuple(np_array))
+        def wrapper(np_array: array1D):
+            return cached_wrapper(tuple(np_array))
 
         @lru_cache(*args, **kwargs)
         #@clru_cache(*args, **kwargs)
@@ -46,7 +47,7 @@ if __name__ == '__main__':
     def no_c(arr):
         return f(arr)
     
-    @np_lru_cache(maxsize = 700, typed = True)
+    @np_lru_cache(maxsize=700, typed=True)
     def with_c(arr):
         return f(arr)
 

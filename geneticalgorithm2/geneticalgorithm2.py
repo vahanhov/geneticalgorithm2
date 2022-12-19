@@ -1,5 +1,4 @@
-'''
-
+"""
 Copyright 2021 Demetry Pascal (forked from Ryan (Mohammad) Solgi)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of 
@@ -19,8 +18,7 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
 SOFTWARE.
-
-'''
+"""
 
 
 from typing import Callable, List, Tuple, Optional, Dict, Any, Union, Sequence, Set
@@ -42,30 +40,30 @@ from OppOpPopInit import init_population, SampleInitializers, OppositionOperator
 
 #region INTERNAL IMPORTS
 
-from .classes import AlgorithmParams, Generation, MiddleCallbackData, GAResult
+from .aliases import array1D, array2D
+
+from .classes import AlgorithmParams, Generation, MiddleCallbackData, GAResult, GenerationConvertible
 
 from .initializer import Population_initializer
 from .plotting_tools import plot_pop_scores, plot_several_lines
 
-from .utils import (can_be_prob, is_numpy, is_current_gen_number,
-                    union_to_matrix,
-                    fast_max, fast_min)
+from .utils import can_be_prob, is_numpy, is_current_gen_number, fast_min
+
+from .callbacks import MiddleCallbackFunc, CallbackFunc
 
 #endregion
 
 
-
-
 class geneticalgorithm2:
     
-    '''
+    """
     Genetic Algorithm (Elitist version) for Python
     
     An implementation of elitist genetic algorithm for solving problems with
     continuous, integers, or mixed variables.
     
     repo path https://github.com/PasaOpasen/geneticalgorithm2
-    '''
+    """
     
     default_params = AlgorithmParams()
     PROGRESS_BAR_LEN = 20
@@ -78,25 +76,25 @@ class geneticalgorithm2:
         return self.result
 
     @property
-    def needs_mutation(self):
+    def needs_mutation(self) -> bool:
         return self.prob_mut > 0 or self.prob_mut_discrete > 0
 
     #region INIT
 
     def __init__(
         self,
-        function: Callable[[np.ndarray], float],
+        function: Callable[[array1D], float],
 
         dimension: int,
         variable_type: Union[str, Sequence[str]] = 'bool',
-        variable_boundaries: Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]] = None,
+        variable_boundaries: Optional[Union[array2D, Sequence[Tuple[float, float]]]] = None,
 
-        variable_type_mixed = None,
+        variable_type_mixed=None,
 
         function_timeout: float = 10,
         algorithm_parameters: Union[AlgorithmParams, Dict[str, Any]] = default_params
     ):
-        '''
+        """
         @param function <Callable[[np.ndarray], float]> - the given objective function to be minimized
         NOTE: This implementation minimizes the given objective function.
         (For maximization multiply function by a negative sign: the absolute
@@ -138,7 +136,7 @@ class geneticalgorithm2:
         for more details and examples of implementation please visit:
             https://github.com/PasaOpasen/geneticalgorithm2
   
-        '''
+        """
 
 
         # all default fields
@@ -149,7 +147,7 @@ class geneticalgorithm2:
         # self.discrete_mutation: Callable[[int, int, int], int] = None
         # self.selection: Callable[[np.ndarray, int], np.ndarray] = None
 
-        self.f: Callable[[np.ndarray], float] = None
+        self.f: Callable[[array1D], float] = None
         self.funtimeout: float = None
         self.set_function: Callable[[np.ndarray], np.ndarray] = None
 
@@ -158,7 +156,7 @@ class geneticalgorithm2:
         # self.indexes_int: np.ndarray = None
         # self.indexes_float: np.ndarray = None
 
-        self.checked_reports: List[Tuple[str, Callable[[np.ndarray], None]]] = None
+        self.checked_reports: List[Tuple[str, Callable[[array1D], None]]] = None
 
         self.population_size: int = None
         self.progress_stream = None
@@ -170,7 +168,7 @@ class geneticalgorithm2:
         if type(algorithm_parameters) != AlgorithmParams:
             algorithm_parameters = AlgorithmParams.from_dict(algorithm_parameters)
 
-        algorithm_parameters._check_if_valid()
+        algorithm_parameters.check_if_valid()
         self.param = algorithm_parameters
         self.crossover, self.real_mutation, self.discrete_mutation, self.selection = algorithm_parameters.get_CMS_funcs()
 
@@ -225,7 +223,7 @@ class geneticalgorithm2:
         self.indexes_int = np.array([])
         self.indexes_float = np.array([])
 
-        VALID_STRINGS = ( 'bool', 'int', 'real')
+        VALID_STRINGS = ('bool', 'int', 'real')
         assert_message = f"\n variable_type must be 'bool', 'int', 'real' or a sequence with 'int' and 'real', got {variable_type}"
 
         if type(variable_type) == str:
@@ -277,7 +275,6 @@ class geneticalgorithm2:
 
         assert elit_ratio >= 0
         self.elit_count = elit_ratio if type(elit_ratio) == int else math.ceil(pop_size*elit_ratio)
-
 
     def _set_max_iterations(self):
 
@@ -333,7 +330,7 @@ class geneticalgorithm2:
         for name, _ in self.checked_reports:
             setattr(self, name, [])
 
-    def _update_report(self, scores: np.ndarray):
+    def _update_report(self, scores: array1D):
         """
         append report value to the end of field
         """
@@ -363,7 +360,7 @@ class geneticalgorithm2:
     def __repr__(self):
         return self.__str__()
 
-    def _simulate(self, sample: np.ndarray):
+    def _simulate(self, sample: array1D):
 
         obj = None
         eval_time = time.time()
@@ -379,8 +376,9 @@ class geneticalgorithm2:
         assert obj is not None, f"the given function was running like {eval_time} seconds and does not provide any output"
 
         tp = type(obj)
-        assert (tp in (int, float) or np.issubdtype(tp, np.floating) or np.issubdtype(tp,
-                                                                                      np.integer)), f"Minimized function should return a number, but got '{obj}' object with type {tp}"
+        assert (
+            tp in (int, float) or np.issubdtype(tp, np.floating) or np.issubdtype(tp, np.integer)
+        ), f"Minimized function should return a number, but got '{obj}' object with type {tp}"
 
         return obj, eval_time
 
@@ -407,27 +405,27 @@ class geneticalgorithm2:
         # deprecated
         disable_progress_bar: bool = False,
 
-        set_function: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        set_function: Optional[Callable[[array2D], array1D]] = None,
         apply_function_to_parents: bool = False,
-        start_generation: Union[str, Dict[str, np.ndarray], Generation, np.ndarray, Tuple[Optional[np.ndarray], Optional[np.ndarray]]] = Generation(),
+        start_generation: GenerationConvertible = Generation(),
         studEA: bool = False,
         mutation_indexes: Optional[Union[Sequence[int], Set[int]]] = None,
 
-        init_creator: Optional[Callable[[], np.ndarray]] = None,
-        init_oppositors: Optional[Sequence[Callable[[np.ndarray], np.ndarray]]] = None,
+        init_creator: Optional[Callable[[], array1D]] = None,
+        init_oppositors: Optional[Sequence[Callable[[array1D], array1D]]] = None,
 
-        duplicates_oppositor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        duplicates_oppositor: Optional[Callable[[array1D], array1D]] = None,
         remove_duplicates_generation_step: Optional[int] = None,
 
-        revolution_oppositor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        revolution_oppositor: Optional[Callable[[array1D], array1D]] = None,
         revolution_after_stagnation_step: Optional[int] = None,
         revolution_part: float = 0.3,
 
-        population_initializer: Tuple[int, Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]] = Population_initializer(select_best_of = 1, local_optimization_step = 'never', local_optimizer = None),
+        population_initializer: Tuple[int, Callable[[array2D, array1D], Tuple[array2D, array1D]]] = Population_initializer(select_best_of=1, local_optimization_step='never', local_optimizer=None),
 
         stop_when_reached: Optional[float] = None,
-        callbacks: Optional[Sequence[Callable[[int, List[float],  np.ndarray, np.ndarray], None]]] = None,
-        middle_callbacks: Optional[Sequence] = None, #+
+        callbacks: Optional[Sequence[CallbackFunc]] = None,
+        middle_callbacks: Optional[Sequence[MiddleCallbackFunc]] = None, #+
         time_limit_secs: Optional[float] = None,
         save_last_generation_as: Optional[str] = None,
         seed: Optional[int] = None
@@ -436,8 +434,12 @@ class geneticalgorithm2:
         runs optimization process
 
         @param no_plot: do not plot results using matplotlib by default
+
+        @param disable_printing: do not print log info of optimization process
         
         @param progress_bar_stream: 'stdout', 'stderr' or None to disable progress bar
+
+        @param disable_progress_bar:
                 
         @param set_function : 2D-array -> 1D-array function, which applyes to matrix of population (size (samples, dimention))
         to estimate their values
@@ -479,7 +481,7 @@ class geneticalgorithm2:
             )
             progress_bar_stream = None
 
-        enable_printing = not disable_printing
+        enable_printing: bool = not disable_printing
 
         start_generation = Generation.from_object(self.dim, start_generation)
 
@@ -510,10 +512,10 @@ class geneticalgorithm2:
 
         stop_by_val = (lambda best_f: False) if stop_when_reached is None else (lambda best_f: best_f <= stop_when_reached)
 
-        t = 0
-        count_stagnation = 0
-        pop: np.ndarray = None
-        scores: np.ndarray = None
+        t: int = 0
+        count_stagnation: int = 0
+        pop: array2D = None
+        scores: array1D = None
 
         #
         #
@@ -621,7 +623,7 @@ class geneticalgorithm2:
             self.creator = SampleInitializers.Combined(
                 minimums=[v[0] for v in self.var_bounds],
                 maximums=[v[1] for v in self.var_bounds],
-                indexes = (
+                indexes=(
                     self.indexes_int,
                     self.indexes_float
                 ),
@@ -640,21 +642,21 @@ class geneticalgorithm2:
 
         # event for removing duplicates
         if remove_duplicates_generation_step is None:
-            def remover(pop: np.ndarray, scores: np.ndarray, gen: int) -> Tuple[
-                np.ndarray,
-                np.ndarray
+            def remover(pop: array2D, scores: array1D, gen: int) -> Tuple[
+                array2D,
+                array1D
             ]:
                 return pop, scores
         else:
             
-            def without_dup(pop: np.ndarray, scores: np.ndarray):  # returns population without dups
+            def without_dup(pop: array2D, scores: array1D):  # returns population without dups
                 _, index_of_dups = np.unique(pop, axis=0, return_index=True)
                 return pop[index_of_dups], scores[index_of_dups], scores.size - index_of_dups.size
             
             if self.dup_oppositor is None:  # if there is no dup_oppositor, use random creator
-                def remover(pop: np.ndarray, scores: np.ndarray, gen: int) -> Tuple[
-                    np.ndarray,
-                    np.ndarray
+                def remover(pop: array2D, scores: array1D, gen: int) -> Tuple[
+                    array2D,
+                    array1D
                 ]:
                     if gen % remove_duplicates_generation_step != 0:
                         return pop, scores
@@ -711,9 +713,9 @@ class geneticalgorithm2:
 
         # event for revolution
         if revolution_after_stagnation_step is None:
-            def revolution(pop: np.ndarray, scores: np.ndarray, stagnation_count: int) -> Tuple[
-                np.ndarray,
-                np.ndarray
+            def revolution(pop: array2D, scores: array1D, stagnation_count: int) -> Tuple[
+                array2D,
+                array1D
             ]:
                 return pop, scores
         else:
@@ -723,9 +725,9 @@ class geneticalgorithm2:
                 )
             assert callable(revolution_oppositor)
             
-            def revolution(pop: np.ndarray, scores: np.ndarray, stagnation_count: int) -> Tuple[
-                np.ndarray,
-                np.ndarray
+            def revolution(pop: array2D, scores: array1D, stagnation_count: int) -> Tuple[
+                array2D,
+                array1D
             ]:
                 if stagnation_count < revolution_after_stagnation_step:
                     return pop, scores
@@ -823,8 +825,8 @@ class geneticalgorithm2:
                 f"Best score before optimization: {self.best_function}"
             )
 
-        t = 1
-        count_stagnation = 0  # iterations without progress
+        t: int = 1
+        count_stagnation: int = 0  # iterations without progress
         reason_to_stop: Optional[str] = None
 
         # gets indexes of 2 parents to crossover
@@ -860,8 +862,8 @@ class geneticalgorithm2:
 
             # Select parents
             
-            par = np.empty((self.parents_count, self.dim))
-            par_scores = np.empty(self.parents_count)
+            par: array2D = np.empty((self.parents_count, self.dim))
+            par_scores: array1D = np.empty(self.parents_count)
             
             # elit parents
             elit_slice = slice(None, self.elit_count)

@@ -1,14 +1,19 @@
 
+from typing import Callable, Dict, List
+
 import math
 import random
 import numpy as np
 
+from .aliases import array1D, TypeAlias
+
+SelectionFunc: TypeAlias = Callable[[array1D, int], array1D]
 
 
 class Selection:
 
     @staticmethod
-    def selections_dict():
+    def selections_dict() -> Dict[str, SelectionFunc]:
         return {
             'fully_random': Selection.fully_random(),
             'roulette': Selection.roulette(),
@@ -20,7 +25,7 @@ class Selection:
         }
 
     @staticmethod
-    def __inverse_scores(scores: np.ndarray):
+    def __inverse_scores(scores: array1D) -> array1D:
         """
         inverse scores (min val goes to max)
         """
@@ -30,16 +35,16 @@ class Selection:
         return (np.amax(normobj) + 1) - normobj
 
     @staticmethod
-    def fully_random():
+    def fully_random() -> SelectionFunc:
         
-        def func(scores: np.ndarray, parents_count: int):
+        def func(scores: array1D, parents_count: int):
             indexes = np.arange(parents_count)
             return np.random.choice(indexes, parents_count, replace = False)
         
         return func
 
     @staticmethod
-    def __roulette(scores: np.ndarray, parents_count: int):
+    def __roulette(scores: array1D, parents_count: int) -> array1D:
         
         sum_normobj = np.sum(scores)
         prob = scores/sum_normobj
@@ -58,9 +63,9 @@ class Selection:
         return parents_indexes
 
     @staticmethod
-    def roulette():
+    def roulette() -> SelectionFunc:
         
-        def func(scores: np.ndarray, parents_count: int):
+        def func(scores: array1D, parents_count: int):
 
             normobj = Selection.__inverse_scores(scores)
 
@@ -69,16 +74,16 @@ class Selection:
         return func
 
     @staticmethod
-    def stochastic():
+    def stochastic() -> SelectionFunc:
         
         def func(scores: np.ndarray, parents_count: int):
             f = Selection.__inverse_scores(scores)
             
-            fN = 1.0/parents_count
-            k = 0
-            acc = 0.0
-            parents = []
-            r = random.random()*fN
+            fN: float = 1.0 / parents_count
+            k: int = 0
+            acc: float = 0.0
+            parents: List[int] = []
+            r: float = random.random() * fN
             
             while len(parents) < parents_count:
                 
@@ -86,7 +91,8 @@ class Selection:
                 
                 while acc > r:
                     parents.append(k)
-                    if len(parents) == parents_count: break
+                    if len(parents) == parents_count: 
+                        break
                     r += fN
                 
                 k += 1
@@ -96,9 +102,9 @@ class Selection:
         return func
 
     @staticmethod
-    def sigma_scaling(epsilon: float = 0.01, is_noisy: bool = False):
+    def sigma_scaling(epsilon: float = 0.01, is_noisy: bool = False) -> SelectionFunc:
         
-        def func(scores: np.ndarray, parents_count):
+        def func(scores: array1D, parents_count):
             f = Selection.__inverse_scores(scores)
             
             sigma = np.std(f, ddof = 1) if is_noisy else np.std(f)
@@ -114,28 +120,28 @@ class Selection:
         return func
 
     @staticmethod
-    def ranking():
+    def ranking() -> SelectionFunc:
         
-        def func(scores: np.ndarray, parents_count: int):
+        def func(scores: array1D, parents_count: int):
             return Selection.__roulette(1 + np.arange(parents_count)[::-1], parents_count)
         
         return func
 
     @staticmethod
-    def linear_ranking(selection_pressure: float = 1.5):
+    def linear_ranking(selection_pressure: float = 1.5) -> SelectionFunc:
         
         assert (selection_pressure > 1 and selection_pressure < 2), f"selection_pressure should be in (1, 2), but got {selection_pressure}"
         
-        def func(scores: np.ndarray, parents_count: int):
-            tmp = parents_count*(parents_count-1)
-            alpha = (2*parents_count - selection_pressure*(parents_count + 1))/tmp
-            beta = 2*(selection_pressure - 1)/tmp
+        def func(scores: array1D, parents_count: int):
+            tmp = parents_count * (parents_count-1)
+            alpha = (2 * parents_count - selection_pressure * (parents_count + 1)) / tmp
+            beta = 2 * (selection_pressure - 1) / tmp
             
             
-            a = -2*alpha - beta
-            b = (2*alpha + beta)**2
-            c = 8*beta
-            d = 2*beta
+            a = -2 * alpha - beta
+            b = (2 * alpha + beta) ** 2
+            c = 8 * beta
+            d = 2 * beta
             
             indexes = np.arange(parents_count)
             
@@ -145,13 +151,18 @@ class Selection:
         return func
 
     @staticmethod
-    def tournament(tau: int = 2):
+    def tournament(tau: int = 2) -> SelectionFunc:
         
-        def func(scores: np.ndarray, parents_count: int):
+        def func(scores: array1D, parents_count: int):
             
             indexes = np.arange(parents_count)
             
-            return np.array([np.min(np.random.choice(indexes, tau, replace = False)) for _ in range(parents_count)])
+            return np.array(
+                [
+                    np.min(np.random.choice(indexes, tau, replace = False)) 
+                    for _ in range(parents_count)
+                ]
+            )
             
         
         return func
