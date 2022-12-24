@@ -1043,17 +1043,19 @@ class geneticalgorithm2:
     #region Set functions
 
     @staticmethod
-    def default_set_function(function_for_set: Callable[[np.ndarray], float]):
+    def default_set_function(function_for_set: Callable[[array1D], float]):
         """
         simple function for creating set_function 
         function_for_set just applyes to each row of population
         """
-        def func(matrix: np.ndarray):
-            return np.array([function_for_set(matrix[i]) for i in range(matrix.shape[0])])
+        def func(matrix: array2D):
+            return np.array(
+                [function_for_set(row) for row in matrix]
+            )
         return func
 
     @staticmethod
-    def vectorized_set_function(function_for_set: Callable[[np.ndarray], float]):
+    def vectorized_set_function(function_for_set: Callable[[array1D], float]):
         """
         works like default, but faster for big populations and slower for little
         function_for_set just applyes to each row of population
@@ -1063,12 +1065,13 @@ class geneticalgorithm2:
         return func
 
     @staticmethod
-    def set_function_multiprocess(function_for_set: Callable[[np.ndarray], float], n_jobs: int = -1):
+    def set_function_multiprocess(function_for_set: Callable[[array1D], float], n_jobs: int = -1):
         """
         like function_for_set but uses joblib with n_jobs (-1 goes to count of available processors)
         """
         from joblib import Parallel, delayed
-        def func(matrix: np.ndarray):
+
+        def func(matrix: array2D):
             result = Parallel(n_jobs=n_jobs)(delayed(function_for_set)(matrix[i]) for i in range(matrix.shape[0]))
             return np.array(result)
         return func

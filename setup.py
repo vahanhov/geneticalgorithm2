@@ -27,7 +27,7 @@ setuptools.setup(
         'func-timeout',
         'numpy',
         'matplotlib',
-        'joblib',
+        'typing_extensions',
         'OppOpPopInit>=2.0.0'
         ]
     

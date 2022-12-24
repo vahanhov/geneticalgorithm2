@@ -1,6 +1,5 @@
 
 matplotlib
-joblib
 numpy
 func_timeout
 typing_extensions
