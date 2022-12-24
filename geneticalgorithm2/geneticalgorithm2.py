@@ -499,8 +499,12 @@ class geneticalgorithm2:
         # randomstate = np.random.default_rng(random.randint(0, 1000) if seed is None else seed)
         # self.randomstate = randomstate
 
-        show_progress = (lambda t, t2, s: self.__progress(t, t2, status=s)) if progress_bar_stream is not None else (lambda t, t2, s: None)
-        if progress_bar_stream is not None:
+        # using bool flag is faster than using empty function with generated string arguments
+        SHOW_PROGRESS = progress_bar_stream is not None
+        if SHOW_PROGRESS:
+
+            show_progress = lambda t, t2, s: self.__progress(t, t2, status=s)
+
             if progress_bar_stream == 'stdout':
                 self.progress_stream = sys.stdout
             elif progress_bar_stream == 'stderr':
@@ -509,6 +513,8 @@ class geneticalgorithm2:
                 raise Exception(
                     f"wrong value {progress_bar_stream} of progress_bar_stream, must be 'stdout'/'stderr'/None"
                 )
+        else:
+            show_progress = None
 
         stop_by_val = (lambda best_f: False) if stop_when_reached is None else (lambda best_f: best_f <= stop_when_reached)
 
@@ -663,15 +669,18 @@ class geneticalgorithm2:
 
                     pp, sc, count_to_create = without_dup(pop, scores)  # pop without dups
                     
-                    if count_to_create == 0: 
-                        show_progress(t, self.max_iterations,
+                    if count_to_create == 0:
+                        if SHOW_PROGRESS:
+                            show_progress(t, self.max_iterations,
                                       f"GA is running...{t} gen from {self.max_iterations}. No dups!")
                         return pop, scores
 
                     pp2 = SampleInitializers.CreateSamples(self.creator, count_to_create)  # new pop elements
                     pp2_scores = self.set_function(pp2)  # new elements values
-                    
-                    show_progress(t, self.max_iterations, f"GA is running...{t} gen from {self.max_iterations}. Kill dups!")
+
+                    if SHOW_PROGRESS:
+                        show_progress(t, self.max_iterations,
+                                      f"GA is running...{t} gen from {self.max_iterations}. Kill dups!")
                     
                     new_pop = np.vstack((pp, pp2))
                     new_scores = np.concatenate((sc, pp2_scores))
@@ -691,8 +700,10 @@ class geneticalgorithm2:
 
                     pp, sc, count_to_create = without_dup(pop, scores)  # pop without dups
 
-                    if count_to_create == 0: 
-                        show_progress(t, self.max_iterations, f"GA is running...{t} gen from {self.max_iterations}. No dups!")
+                    if count_to_create == 0:
+                        if SHOW_PROGRESS:
+                            show_progress(t, self.max_iterations,
+                                          f"GA is running...{t} gen from {self.max_iterations}. No dups!")
                         return pop, scores
 
                     if count_to_create > sc.size:
@@ -702,8 +713,9 @@ class geneticalgorithm2:
                     pp2 = OppositionOperators.Reflect(pp[-count_to_create:], self.dup_oppositor)  # new pop elements
                     pp2_scores = self.set_function(pp2)  # new elements values
 
-                    show_progress(t, self.max_iterations,
-                                  f"GA is running...{t} gen from {self.max_iterations}. Kill dups!")
+                    if SHOW_PROGRESS:
+                        show_progress(t, self.max_iterations,
+                                      f"GA is running...{t} gen from {self.max_iterations}. Kill dups!")
 
                     new_pop = np.vstack((pp, pp2))
                     new_scores = np.concatenate((sc, pp2_scores))
@@ -739,8 +751,10 @@ class geneticalgorithm2:
                 combined = np.vstack((pop, pp2))
                 combined_scores = np.concatenate((scores, pp2_scores))
                 args = combined_scores.argsort()
-                
-                show_progress(t, self.max_iterations, f"GA is running...{t} gen from {self.max_iterations}. Revolution!")
+
+                if SHOW_PROGRESS:
+                    show_progress(t, self.max_iterations,
+                                  f"GA is running...{t} gen from {self.max_iterations}. Revolution!")
 
                 args = args[:scores.size]
                 return combined[args], combined_scores[args]
@@ -849,7 +863,8 @@ class geneticalgorithm2:
                 reason_to_stop = f'time is done: {time.time() - start_time} >= {time_limit_secs}'
 
             if reason_to_stop is not None:
-                show_progress(t, self.max_iterations, f"GA is running... STOP! {reason_to_stop}")
+                if SHOW_PROGRESS:
+                    show_progress(t, self.max_iterations, f"GA is running... STOP! {reason_to_stop}")
                 break
 
             if scores[0] < self.best_function:  # if there is progress
@@ -858,11 +873,12 @@ class geneticalgorithm2:
             else:
                 count_stagnation += 1
 
-            show_progress(
-                t,
-                self.max_iterations,
-                f"GA is running...{t} gen from {self.max_iterations}...best value = {self.best_function}"
-            )
+            if SHOW_PROGRESS:
+                show_progress(
+                    t,
+                    self.max_iterations,
+                    f"GA is running...{t} gen from {self.max_iterations}...best value = {self.best_function}"
+                )
 
             # Select parents
             
