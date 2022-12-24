@@ -216,6 +216,9 @@ class geneticalgorithm2:
 
         self._set_report()
 
+        # specify this function to speed up or change default behaviour
+        self.fill_children: Optional[Callable[[array2D, int], None]] = None
+        """custom function which adds children for population POP where POP[:parents_count] are parents lines and next lines are for children"""
 
     def _set_types_indexes(self, variable_type: Union[str, Sequence[str]]):
 
@@ -909,22 +912,25 @@ class geneticalgorithm2:
             pop[parents_slice] = par
             scores[parents_slice] = par_scores
 
-            DO_MUTATION = self.needs_mutation
-            for k in range(self.parents_count, self.population_size, 2):
+            if self.fill_children is None:  # default fill children behaviour
+                DO_MUTATION = self.needs_mutation
+                for k in range(self.parents_count, self.population_size, 2):
 
-                r1, r2 = get_parents_inds()
+                    r1, r2 = get_parents_inds()
 
-                pvar1 = pop[r1]  # equal to par[r1], but better for cache
-                pvar2 = pop[r2]
-                
-                ch1, ch2 = self.crossover(pvar1, pvar2)
-                
-                if DO_MUTATION:
-                    ch1 = self.mut(ch1)
-                    ch2 = self.mut_middle(ch2, pvar1, pvar2)               
+                    pvar1 = pop[r1]  # equal to par[r1], but better for cache
+                    pvar2 = pop[r2]
 
-                pop[k] = ch1
-                pop[k+1] = ch2
+                    ch1, ch2 = self.crossover(pvar1, pvar2)
+
+                    if DO_MUTATION:
+                        ch1 = self.mut(ch1)
+                        ch2 = self.mut_middle(ch2, pvar1, pvar2)
+
+                    pop[k] = ch1
+                    pop[k+1] = ch2
+            else:  # custom behaviour
+                self.fill_children(pop, self.parents_count)
 
             if apply_function_to_parents:
                 scores = self.set_function(pop)

@@ -13,6 +13,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 - [Installation](#installation)
 - [Updates information](#updates-information)
   - [**Future**](#future)
+  - [6.8.4 minor update](#684-minor-update)
   - [6.8.3 types update](#683-types-update)
   - [6.8.2 patch](#682-patch)
   - [6.8.1 patch](#681-patch)
@@ -134,6 +135,12 @@ pip3 install geneticalgorithm2
 - duplicates removing and revolutions will be moved to `MiddleCallbacks` and removed as alone `run()` parameters
 - `function_timeout` and `function` will be moved to `run()` method
 - new stop criteria callbacks (min std, max functions evaluations)
+
+## 6.8.4 minor update
+
+- a bit of refactor
+- little optimizations
+- add empty field `fill_children(pop_matrix, parents_count)` to `geneticalgorithm2` class to specify children creating behaviour (what is the most intensive part of algorithm after optimizing func calculations)
 
 ## 6.8.3 types update
 
