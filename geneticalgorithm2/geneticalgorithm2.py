@@ -584,8 +584,8 @@ class geneticalgorithm2:
             def total_callback(
                 generation_number: int,
                 report_list: List[float],
-                last_population: np.ndarray,
-                last_scores: np.ndarray
+                last_population: array2D,
+                last_scores: array1D
             ):
                 for cb in callbacks:
                     cb(generation_number, report_list, last_population, last_scores)
@@ -627,7 +627,7 @@ class geneticalgorithm2:
                     self.indexes_int,
                     self.indexes_float
                 ),
-                creator_initializers = (
+                creator_initializers=(
                     SampleInitializers.RandomInteger,
                     SampleInitializers.Uniform
                 )
@@ -867,34 +867,39 @@ class geneticalgorithm2:
             # Select parents
             
             par: array2D = np.empty((self.parents_count, self.dim))
+            """samples chosen to create new samples"""
             par_scores: array1D = np.empty(self.parents_count)
-            
-            # elit parents
+
             elit_slice = slice(None, self.elit_count)
-            # copy needs because generation wil be removed after parents selection
+            """elit parents"""
+
+            # copy needs because the generation will be removed after parents selection
             par[elit_slice] = pop[elit_slice].copy()
             par_scores[elit_slice] = scores[elit_slice].copy()
-                
-            # non-elit parents indexes
+
             new_par_inds = self.selection(scores[self.elit_count:], self.parents_count - self.elit_count).astype(np.int16) + self.elit_count
+            """non-elit parents indexes"""
             #new_par_inds = self.selection(scores, self.parents_count - self.elit_count).astype(np.int16)
             par_slice = slice(self.elit_count, self.parents_count)
             par[par_slice] = pop[new_par_inds].copy()
             par_scores[par_slice] = scores[new_par_inds].copy()
 
-            # New generation
             pop = np.empty((self.population_size, self.dim))
+            """new generation"""
             scores = np.empty(self.population_size)
+            """new generation scores"""
 
             parents_slice = slice(None, self.parents_count)
-            pop[parents_slice] = par[parents_slice]
-            scores[parents_slice] = par_scores[parents_slice]
+            pop[parents_slice] = par
+            scores[parents_slice] = par_scores
 
             DO_MUTATION = self.needs_mutation
             for k in range(self.parents_count, self.population_size, 2):
+
                 r1, r2 = get_parents_inds()
-                pvar1 = par[r1]
-                pvar2 = par[r2]
+
+                pvar1 = pop[r1]  # equal to par[r1], but better for cache
+                pvar2 = pop[r2]
                 
                 ch1, ch2 = self.crossover(pvar1, pvar2)
                 
@@ -998,7 +1003,7 @@ class geneticalgorithm2:
     #endregion
 
     #region MUTATION
-    def mut(self, x: np.ndarray):
+    def mut(self, x: array1D):
         """
         just mutation
         """
@@ -1013,7 +1018,7 @@ class geneticalgorithm2:
             
         return x
 
-    def mut_middle(self, x: np.ndarray, p1: np.ndarray, p2: np.ndarray):
+    def mut_middle(self, x: array1D, p1: array1D, p2: array1D):
         """
         mutation oriented on parents
         """
@@ -1041,6 +1046,7 @@ class geneticalgorithm2:
 
 
     #region Set functions
+
 
     @staticmethod
     def default_set_function(function_for_set: Callable[[array1D], float]):
