@@ -58,14 +58,14 @@ names = [
 
 for opp, name in zip(oppositors, names):
     
-    average_report = np.zeros(iterations+1)
+    average_report = np.zeros(iterations)
     
     for _ in range(40):
         model.run(no_plot = True,
                   population_initializer=Population_initializer(select_best_of = 3),
                   init_oppositors=opp
                   )
-        average_report[1:] += np.array(model.report)
+        average_report += np.array(model.report)
    
     average_report /= 40
     
