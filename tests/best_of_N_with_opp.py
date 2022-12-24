@@ -65,7 +65,7 @@ for opp, name in zip(oppositors, names):
                   population_initializer=Population_initializer(select_best_of = 3),
                   init_oppositors=opp
                   )
-        average_report += np.array(model.report)
+        average_report[1:] += np.array(model.report)
    
     average_report /= 40
     
