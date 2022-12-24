@@ -3,6 +3,7 @@ from typing import Optional, Any, Tuple
 
 from pathlib import Path
 
+import random
 import numpy as np
 
 from .aliases import array1D, array2D
@@ -49,7 +50,14 @@ def union_to_matrix(variables_2D: array2D, scores_1D: array1D) -> array2D:
     return np.hstack((variables_2D, scores_1D[:, np.newaxis]))
 
 
-
+def random_indexes_pair(seq_len: int) -> Tuple[int, int]:
+    """works 3 times faster than `random.sample(range(seq_len), 2)`"""
+    a = random.randrange(seq_len)
+    b = random.randrange(seq_len)
+    if a == b:
+        while a == b:
+            b = random.randrange(seq_len)
+    return a, b
 
 
 

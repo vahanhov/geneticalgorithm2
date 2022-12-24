@@ -47,7 +47,7 @@ from .classes import AlgorithmParams, Generation, MiddleCallbackData, GAResult, 
 from .initializer import Population_initializer
 from .plotting_tools import plot_pop_scores, plot_several_lines
 
-from .utils import can_be_prob, is_numpy, is_current_gen_number, fast_min
+from .utils import can_be_prob, is_numpy, is_current_gen_number, fast_min, random_indexes_pair
 
 from .callbacks import MiddleCallbackFunc, CallbackFunc
 
@@ -826,11 +826,15 @@ class geneticalgorithm2:
             )
 
         t: int = 1
-        count_stagnation: int = 0  # iterations without progress
+        count_stagnation: int = 0
+        """iterations without progress"""
         reason_to_stop: Optional[str] = None
 
         # gets indexes of 2 parents to crossover
-        get_parents_inds = (lambda: (0, random.randrange(1, self.parents_count))) if studEA else (lambda: random.sample(range(self.parents_count), 2))
+        if studEA:
+            get_parents_inds = lambda: (0, random.randrange(1, self.parents_count))
+        else:
+            get_parents_inds = lambda: random_indexes_pair(self.parents_count)
 
         #  while no reason to stop
         while True:
