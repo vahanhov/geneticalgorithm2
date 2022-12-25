@@ -35,6 +35,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
   - [6.4.0 minor update (refactoring)](#640-minor-update-refactoring)
   - [6.3.0 minor update (refactoring)](#630-minor-update-refactoring)
 - [Working process](#working-process)
+  - [Main algorithm structure](#main-algorithm-structure)
   - [How to run](#how-to-run)
   - [Constructor parameters](#constructor-parameters)
   - [Genetic algorithm's parameters](#genetic-algorithms-parameters)
@@ -68,6 +69,12 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
   - [Middle callbacks](#middle-callbacks)
   - [How to compare efficiency of several versions of GA optimization](#how-to-compare-efficiency-of-several-versions-of-ga-optimization)
   - [Hints on how to adjust genetic algorithm's parameters (from `geneticalgorithm` package)](#hints-on-how-to-adjust-genetic-algorithms-parameters-from-geneticalgorithm-package)
+  - [How to get maximum speed](#how-to-get-maximum-speed)
+    - [Don't use plotting](#dont-use-plotting)
+    - [Don't use progress bar](#dont-use-progress-bar)
+    - [Try to use faster optimizing function](#try-to-use-faster-optimizing-function)
+    - [Specify custom optimized `mutation`, `crossover`, `selection`](#specify-custom-optimized-mutation-crossover-selection)
+    - [Specify `fill_children` method](#specify-fill_children-method)
 - [Examples pretty collection](#examples-pretty-collection)
   - [Optimization test functions](#optimization-test-functions)
     - [Sphere](#sphere)
@@ -140,7 +147,7 @@ pip3 install geneticalgorithm2
 
 - a bit of refactor
 - little optimizations
-- add empty field `fill_children(pop_matrix, parents_count)` to `geneticalgorithm2` class to specify children creating behaviour (what is the most intensive part of algorithm after optimizing func calculations)
+- add empty field `fill_children(pop_matrix, parents_count)` to `geneticalgorithm2` class to specify children creating behaviour (what is the most intensive part of algorithm after optimizing func calculations), see [this](#specify-fill_children-method)
 
 ## 6.8.3 types update
 
@@ -251,6 +258,36 @@ All that classes are collected [in file](geneticalgorithm2/classes.py). To maint
 
 
 # Working process
+
+## Main algorithm structure
+
+```
+Preprocess: making inner functions depends on params, making/loading start population
+
+while True:
+
+    if reason to stop (time is elapsed / no progress / generation count is reached / min value is reached):
+        break
+
+
+    select parents to crossover from last population and to put them to new population:
+        select (elit count) best samples
+        select (parents count - elit count) random samples (by selection function)
+
+    create (total samples count - parents count) children (samples from selected parents) and put them to new population:
+        while not all chilren are created:
+            select 2 random parents
+            make child1, child2 from them using crossover
+            mutate child1 by mutation (model.mut)
+            mutate child2 by middle mutation (model.mut_middle)
+            put children to new population
+    
+    remove duplicates, make revolutions, sort population by scores
+    use callbacks, use middle callbacks
+
+Postprocess: plotting results, saving
+
+```
 
 ## How to run
 
@@ -1273,6 +1310,174 @@ algorithm for several times and if convergence curves of all runs converged to t
 depends but usually five or ten runs is prevalent. Notice that in some problems
 several possible set of variables produces the same objective function value. 
 When we study the convergence of a genetic algorithm we compare the objective function values not the decision variables.
+
+## How to get maximum speed
+
+### Don't use plotting
+
+```python
+result = model.run(
+    no_plot = True, 
+)
+```
+
+### Don't use progress bar
+
+```python
+result = model.run(
+    progress_bar_stream = None,
+)
+```
+
+### Try to use faster optimizing function
+
+Try to speed up your optimizing `function` using Numpy, [Numba](https://numba.pydata.org/) or [Cython](https://cython.org/). If u can, write your own `set_function` (function which applies to whole population samples matrix) with cython optimizations, parallelism and so.
+
+### Specify custom optimized `mutation`, `crossover`, `selection`
+
+Write faster implementations for model methods `mut`, `mut_middle`, `crossover`, `selection` and set them before running optimization process:
+
+```python
+model.mut = custom_mut
+model.crossover = custom_crossover
+
+model.run(...)
+```
+
+### Specify `fill_children` method
+
+From version `6.8.4` there is `fill_children` model method:
+
+```python
+self.fill_children: Optional[Callable[[array2D, int], None]] = None
+```
+
+It is empty and does nothing; but if u specify it, u can get huge speed up at very intensive algorithm part. Take a look at [main algo structure](#main-algorithm-structure). There is a part with creating children from parents, this part is the most intensive because it uses python loops, calls sampling, crossover and mutations at each iteration. Using `fill_children`, u can rewrite this logic in your manner to speed up.
+
+Suppose u have new population matrix `pop` (type `np.float64`, shape `(population_size, dim_count)`) where first `parents_count` rows are selected parents, next rows are filled by random, so inside `fill_children` method u should fill last `population_size - parents_count` rows (children) by using some your logic. Expected (but not mandatory) logic like this:
+
+```python
+for k in range(self.parents_count, self.population_size, 2):
+
+    r1, r2 = get_parents_inds()  # get 2 random parents indexes from [0, parents_count)
+
+    pvar1 = pop[r1]
+    pvar2 = pop[r2]
+
+    ch1, ch2 = self.crossover(pvar1, pvar2)  # crossover
+
+    # mutations
+    ch1 = self.mut(ch1)
+    ch2 = self.mut_middle(ch2, pvar1, pvar2)
+
+    # put to population
+    pop[k] = ch1
+    pop[k+1] = ch2
+```
+
+**Example**. In one task I use this algorithm many times (100 000 generations total), so the speed matters. Every sample item is the index of element in other array there, so `i`th sample element is always integer value from cut `[0, end[i]]`. I use uniform crossover and uniform mutation (work perfect for this task). So I specified creating children logic for this task using cython.
+
+Content of file `fill_children.pyx`:
+
+```cython
+#!python
+#cython: language_level=3
+
+import numpy as np
+
+cimport numpy as np
+
+np.import_array()
+
+cimport cython
+
+import math
+import random
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def fill_children(
+    np.ndarray[np.float64_t, ndim=2] pop,  # samples are integers but always float64 type
+    int parents_count, # count of already done parents
+
+    float mut_prob,  # mutation probability
+    np.ndarray[np.uint8_t, ndim=1] ends  # max elements for each dimension (min elements are 0)
+):
+
+    cdef:
+        Py_ssize_t i, k, population_size = pop.shape[0], dim_count = pop.shape[1], r1, r2
+
+        float v1, v2, tmp
+        np.ndarray[np.float64_t, ndim=1] cross, mut, mut_middle
+
+    # making 2 children at each iteration
+    for k in range(parents_count, population_size, 2): # C loop, not Python
+        
+        #
+        # 2 random parents (fast implementation)
+        #
+
+        r1 = random.randrange(parents_count)
+        r2 = random.randrange(parents_count)
+        if r1 == r2:
+            while r1 == r2:  # C loop!
+               r2 = random.randrange(parents_count) 
+
+        #
+        # I always need these 3 random probs sequences, so the fastest way to obtain them is np.random.random
+        #
+        cross = np.random.random(dim_count)  # crossover probabilities for each dimension
+        mut = np.random.random(dim_count)
+        mut_middle = np.random.random(dim_count)
+
+        for i in range(dim_count):  # C loop for each dimension
+            v1 = pop[r1, i]  # first parent value
+            v2 = pop[r2, i]  # second parent value
+
+            if cross[i] < 0.5:  # random swap (uniform crossover), copy otherwise
+                tmp = v2
+                v2 = v1
+                v1 = tmp
+
+            if mut[i] < mut_prob:  # random mutation for first child
+                # fastest way to get random integer from [0, ends[i]]
+                # random.random() calls not always but only on mut[i] < mut_prob
+                v1 = math.floor(random.random() * (ends[i] + 1))
+
+            if mut_middle[i] < mut_prob: # mut_middle for second
+                tmp = random.random()
+                if v1 < v2:
+                    v2 = v1 + math.floor(tmp * (v2 - v1 + 1))  # integer from [v1, v2], v1 < v2
+                elif v1 > v2:
+                    v2 = v2 + math.floor(tmp * (v1 - v2 + 1)) # integer from [v2, v1], v2 < v1
+                else:
+                    v2 = math.floor(tmp * (ends[i] + 1))
+
+            #
+            # put values to children in array
+            #
+            pop[k, i] = v1
+            pop[k + 1, i] = v2
+
+```
+
+After compilation this file I can call it from python file to use inside GA:
+
+```python
+
+mut_prob = param['mutation_probability']
+
+def fill_children(pop: array2D, parents_count: int):
+    """wrapper on fill_children.fill_children with putting local variables mut_prob, ends"""
+    return fill_children.fill_children(
+        pop, parents_count, mut_prob, ends
+    )
+
+model.fill_children = fill_children
+
+model.run(...)
+```
+
 
 # Examples pretty collection
 
