@@ -106,7 +106,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
   - [How to initialize start population? How to continue optimization with new run?](#how-to-initialize-start-population-how-to-continue-optimization-with-new-run)
 # About
 
-**geneticalgorithm2** is very flexible and highly optimized Python library for implementing classic
+[**geneticalgorithm2**](https://pasaopasen.github.io/geneticalgorithm2/) is very flexible and highly optimized Python library for implementing classic
 [genetic-algorithm](https://towardsdatascience.com/introduction-to-optimization-with-genetic-algorithm-2f5001d9964b) (GA).
 
 Features of this package:
@@ -120,8 +120,9 @@ Features of this package:
 * many cases of crossover, mutation and selection
 * support of integer, boolean and real (continuous/discrete) variables types
 * support of mixed types of variables
-* support of elitist and studEA genetic algorithm
-* support of revolutions   
+* support of classic, elitist and studEA genetic algorithm combinations
+* support of revolutions and duplicates utilization  
+* reach support of customization
     
 # Installation
 
