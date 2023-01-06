@@ -13,6 +13,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 - [Installation](#installation)
 - [Updates information](#updates-information)
   - [**Future**](#future)
+  - [6.8.5 minor update](#685-minor-update)
   - [6.8.4 minor update](#684-minor-update)
   - [6.8.3 types update](#683-types-update)
   - [6.8.2 patch](#682-patch)
@@ -143,6 +144,12 @@ pip3 install geneticalgorithm2
 - duplicates removing and revolutions will be moved to `MiddleCallbacks` and removed as alone `run()` parameters
 - `function_timeout` and `function` will be moved to `run()` method
 - new stop criteria callbacks (min std, max functions evaluations)
+
+## 6.8.5 minor update
+
+- update `OppOpPopInit` `2.0.0->2.0.1`
+- set default `function_timeout` to `None` which means no use of function time checking
+- remove `joblib` and `func_timeout` from necessary dependences
 
 ## 6.8.4 minor update
 
@@ -458,7 +465,7 @@ For example, `np.array([[0,100],[0,200]])` or `[(0, 100), (0, 200)]` determines 
         
 * **function_timeout** (`float`) - if the given function does not provide 
 output before function_timeout (unit is seconds) the algorithm raise error.
-For example, when there is an infinite loop in the given function. 
+For example, when there is an infinite loop in the given function. `None` means disabling
         
 * **algorithm_parameters** (`Union[AlgorithmParams, Dict[str, Any]]`). Dictionary or AlgorithmParams object with fields:  
     * @ **max_num_iteration** (`int/None`) - stoping criteria of the genetic algorithm (GA)  

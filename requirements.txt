@@ -1,6 +1,7 @@
 
 matplotlib
 numpy
+joblib
 func_timeout
 typing_extensions
-OppOpPopInit==2.0.0
+OppOpPopInit==2.0.1

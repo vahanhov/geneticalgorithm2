@@ -34,9 +34,6 @@ import random
 import math
 
 import numpy as np
-from func_timeout import func_timeout, FunctionTimedOut
-
-from OppOpPopInit import init_population, SampleInitializers, OppositionOperators, set_seed
 
 #region INTERNAL IMPORTS
 
@@ -91,47 +88,47 @@ class geneticalgorithm2:
 
         variable_type_mixed=None,
 
-        function_timeout: float = 10,
+        function_timeout: Optional[float] = None,
         algorithm_parameters: Union[AlgorithmParams, Dict[str, Any]] = default_params
     ):
         """
-        @param function <Callable[[np.ndarray], float]> - the given objective function to be minimized
-        NOTE: This implementation minimizes the given objective function.
-        (For maximization multiply function by a negative sign: the absolute
-        value of the output would be the actual objective function)
+        Args:
+            function <Callable[[np.ndarray], float]> - the given objective function to be minimized
+            #NOTE: This implementation minimizes the given objective function.
+            (For maximization multiply function by a negative sign: the absolute
+            value of the output would be the actual objective function)
 
-        @param dimension <integer> - the number of decision variables
+            dimension <integer> - the number of decision variables
 
-        @param variable_type <string> - 'bool' if all variables are Boolean;
-        'int' if all variables are integer; and 'real' if all variables are
-        real value or continuous. For mixed types use sequence of string of type for each variable
+            variable_type <string> - 'bool' if all variables are Boolean;
+            'int' if all variables are integer; and 'real' if all variables are
+            real value or continuous. For mixed types use sequence of string of type for each variable
 
-        @param variable_boundaries <Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]]> - Default None; leave it
-        None if variable_type is 'bool'; otherwise provide an array of tuples
-        of length two as boundaries for each variable;
-        the length of the array must be equal dimension. For example,
-        np.array([0,100],[0,200]) determines lower boundary 0 and upper boundary 100 for first
-        and upper boundary 200 for second variable where dimension is 2.
+            variable_boundaries <Optional[Union[np.ndarray, Sequence[Tuple[float, float]]]]> - Default None; leave it
+            None if variable_type is 'bool'; otherwise provide an array of tuples
+            of length two as boundaries for each variable;
+            the length of the array must be equal dimension. For example,
+            np.array([0,100],[0,200]) determines lower boundary 0 and upper boundary 100 for first
+            and upper boundary 200 for second variable where dimension is 2.
 
-        @param variable_type_mixed -- deprecated
+            variable_type_mixed -- deprecated
 
-        @param function_timeout <float> - if the given function does not provide
-        output before function_timeout (unit is seconds) the algorithm raise error.
-        For example, when there is an infinite loop in the given function.
+            function_timeout <float> - if the given function does not provide
+            output before function_timeout (unit is seconds) the algorithm raise error.
+            For example, when there is an infinite loop in the given function. `None` means disabling
 
-        @param algorithm_parameters <Union[AlgorithmParams, Dict[str, Any]]>:
-            @ max_num_iteration <int> - stoping criteria of the genetic algorithm (GA)
-            @ population_size <int>
-            @ mutation_probability <float in [0,1]>
-            @ elit_ratio <float in [0,1]>
-            @ crossover_probability <float in [0,1]>
-            @ parents_portion <float in [0,1]>
-            @ crossover_type <string/function> - Default is 'uniform'; 'one_point' or 'two_point' (not only) are other options
-            @ mutation_type <string/function> - Default is 'uniform_by_x'; see GitHub to check other options
-            @ mutation_discrete_type <string/function> - mutation type for discrete variables
-            @ selection_type <string/function> - Default is 'roulette'; see GitHub to check other options
-            @ max_iteration_without_improv <int> - maximum number of successive iterations without improvement. If None it is ineffective
-
+            algorithm_parameters <Union[AlgorithmParams, Dict[str, Any]]>:
+                @ max_num_iteration <int> - stoping criteria of the genetic algorithm (GA)
+                @ population_size <int>
+                @ mutation_probability <float in [0,1]>
+                @ elit_ratio <float in [0,1]>
+                @ crossover_probability <float in [0,1]>
+                @ parents_portion <float in [0,1]>
+                @ crossover_type <string/function> - Default is 'uniform'; 'one_point' or 'two_point' (not only) are other options
+                @ mutation_type <string/function> - Default is 'uniform_by_x'; see GitHub to check other options
+                @ mutation_discrete_type <string/function> - mutation type for discrete variables
+                @ selection_type <string/function> - Default is 'roulette'; see GitHub to check other options
+                @ max_iteration_without_improv <int> - maximum number of successive iterations without improvement. If None it is ineffective
 
         for more details and examples of implementation please visit:
             https://github.com/PasaOpasen/geneticalgorithm2
@@ -203,7 +200,18 @@ class geneticalgorithm2:
         # input function
         assert (callable(function)), "function must be callable!"
         self.f = function
-        self.funtimeout = float(function_timeout)
+
+        if function_timeout is not None and function_timeout > 0:
+            try:
+                from func_timeout import func_timeout, FunctionTimedOut
+            except ModuleNotFoundError:
+                raise ModuleNotFoundError(
+                    "function_timeout > 0 needs additional package func_timeout\n"
+                    "run `python -m pip install func_timeout`\n"
+                    "or disable this parameter: function_timeout=None"
+                )
+
+        self.funtimeout = None if function_timeout is None else float(function_timeout)
 
         #############################################################
         
@@ -264,7 +272,6 @@ class geneticalgorithm2:
                 assert(i[0] <= i[1]), "\n lower_boundaries must be smaller than upper_boundaries [lower,upper]"
 
             self.var_bounds = [(i[0], i[1]) for i in variable_boundaries]
-
 
     def _set_parents_count(self, parents_portion: float):
 
@@ -346,7 +353,7 @@ class geneticalgorithm2:
 
     #region RUN METHODS
 
-    def __progress(self, count: int, total: int, status: str = ''):
+    def _progress(self, count: int, total: int, status: str = ''):
 
         part = count / total
 
@@ -364,6 +371,8 @@ class geneticalgorithm2:
         return self.__str__()
 
     def _simulate(self, sample: array1D):
+
+        from func_timeout import func_timeout, FunctionTimedOut
 
         obj = None
         eval_time = time.time()
@@ -436,46 +445,47 @@ class geneticalgorithm2:
         """
         runs optimization process
 
-        @param no_plot: do not plot results using matplotlib by default
+        Args:
+            no_plot: do not plot results using matplotlib by default
 
-        @param disable_printing: do not print log info of optimization process
-        
-        @param progress_bar_stream: 'stdout', 'stderr' or None to disable progress bar
+            disable_printing: do not print log info of optimization process
 
-        @param disable_progress_bar:
-                
-        @param set_function : 2D-array -> 1D-array function, which applyes to matrix of population (size (samples, dimention))
-        to estimate their values
-        
-        @param apply_function_to_parents: apply function to parents from previous generation (if it's needed)
-                                                                                                         
-        @param start_generation: Generation object or a dictionary with structure {'variables':2D-array of samples, 'scores': function values on samples} or path to .npz file (str) with saved generation; if 'scores' value is None the scores will be compute
+            progress_bar_stream: 'stdout', 'stderr' or None to disable progress bar
 
-        @param studEA: using stud EA strategy (crossover with best object always)
-        
-        @param mutation_indexes: indexes of dimensions where mutation can be performed (all dimensions by default)
+            disable_progress_bar:
 
-        @param init_creator: the function creates population samples. By default -- random uniform for real variables and random uniform for int
-        @param init_oppositors: the list of oppositors creates oppositions for base population. No by default
-        @param duplicates_oppositor: oppositor for applying after duplicates removing. By default -- using just random initializer from creator
-        @param remove_duplicates_generation_step: None/int, step for removing duplicates (have a sense with discrete tasks). No by default
-        @param revolution_oppositor: oppositor for revolution time. No by default
-        @param revolution_after_stagnation_step: create revolution after this generations of stagnation. No by default
-        @param revolution_part: float, the part of generation to being oppose. By default is 0.3
+            set_function : 2D-array -> 1D-array function, which applyes to matrix of population (size (samples, dimention))
+            to estimate their values
 
-        @param population_initializer: object for actions at population initialization step to create better start population. See doc
+            apply_function_to_parents: apply function to parents from previous generation (if it's needed)
 
-        @param stop_when_reached: stop searching after reaching this value (it can be potential minimum or something else)
+            start_generation: Generation object or a dictionary with structure {'variables':2D-array of samples, 'scores': function values on samples} or path to .npz file (str) with saved generation; if 'scores' value is None the scores will be compute
 
-        @param callbacks: sequence of callback functions with structure: (generation_number, report_list, last_population, last_scores) -> do some action
+            studEA: using stud EA strategy (crossover with best object always)
 
-        @param middle_callbacks: sequence of functions made MiddleCallbacks class
+            mutation_indexes: indexes of dimensions where mutation can be performed (all dimensions by default)
 
-        @param time_limit_secs: limit time of working (in seconds)
+            init_creator: the function creates population samples. By default -- random uniform for real variables and random uniform for int
+            init_oppositors: the list of oppositors creates oppositions for base population. No by default
+            duplicates_oppositor: oppositor for applying after duplicates removing. By default -- using just random initializer from creator
+            remove_duplicates_generation_step: None/int, step for removing duplicates (have a sense with discrete tasks). No by default
+            revolution_oppositor: oppositor for revolution time. No by default
+            revolution_after_stagnation_step: create revolution after this generations of stagnation. No by default
+            revolution_part: float, the part of generation to being oppose. By default is 0.3
 
-        @param save_last_generation_as: path to .npz file for saving last_generation as numpy dictionary like {'population': 2D-array, 'scores': 1D-array}, None if doesn't need to save in file
+            population_initializer: object for actions at population initialization step to create better start population. See doc
 
-        @param seed: random seed (None if doesn't matter)
+            stop_when_reached: stop searching after reaching this value (it can be potential minimum or something else)
+
+            callbacks: sequence of callback functions with structure: (generation_number, report_list, last_population, last_scores) -> do some action
+
+            middle_callbacks: sequence of functions made MiddleCallbacks class
+
+            time_limit_secs: limit time of working (in seconds)
+
+            save_last_generation_as: path to .npz file for saving last_generation as numpy dictionary like {'population': 2D-array, 'scores': 1D-array}, None if doesn't need to save in file
+
+            seed: random seed (None if doesn't matter)
         """
 
         if disable_progress_bar:
@@ -497,6 +507,7 @@ class geneticalgorithm2:
         assert (time_limit_secs is None or time_limit_secs > 0), 'time_limit_secs must be None of number > 0'
 
         self._set_mutation_indexes(mutation_indexes)
+        from OppOpPopInit import set_seed
         set_seed(seed)
 
         # randomstate = np.random.default_rng(random.randint(0, 1000) if seed is None else seed)
@@ -506,7 +517,7 @@ class geneticalgorithm2:
         SHOW_PROGRESS = progress_bar_stream is not None
         if SHOW_PROGRESS:
 
-            show_progress = lambda t, t2, s: self.__progress(t, t2, status=s)
+            show_progress = lambda t, t2, s: self._progress(t, t2, status=s)
 
             if progress_bar_stream == 'stdout':
                 self.progress_stream = sys.stdout
@@ -628,6 +639,9 @@ class geneticalgorithm2:
         
         # population creator by random or with oppositions
         if init_creator is None:
+
+            from OppOpPopInit import SampleInitializers
+
             # just uniform random
             self.creator = SampleInitializers.Combined(
                 minimums=[v[0] for v in self.var_bounds],
@@ -739,6 +753,8 @@ class geneticalgorithm2:
                     f"How can I make revolution each {revolution_after_stagnation_step} stagnation steps if revolution_oppositor is None (not defined)?"
                 )
             assert callable(revolution_oppositor)
+
+            from OppOpPopInit import OppositionOperators
             
             def revolution(pop: array2D, scores: array1D, stagnation_count: int) -> Tuple[
                 array2D,
@@ -776,6 +792,8 @@ class geneticalgorithm2:
         
         if start_generation.variables is None:
 
+            from OppOpPopInit import init_population
+
             real_pop_size = self.population_size * pop_coef
 
             # pop = np.empty((real_pop_size, self.dim))
@@ -786,19 +804,30 @@ class geneticalgorithm2:
                 creator=self.creator,
                 oppositors=self.init_oppositors
             )
-            
-            time_counter = 0
 
-            for p in range(0, real_pop_size):
-                # simulation returns exception or func value -- check the time of evaluating
-                value, eval_time = self._simulate(pop[p])
-                scores[p] = value
-                time_counter += eval_time
+            if self.funtimeout and self.funtimeout > 0:  # perform simulation
             
-            if enable_printing:
-                print(
-                    f"\nAverage time of function evaluating (secs): {time_counter/real_pop_size} (total = {time_counter})\n"
-                )
+                time_counter = 0
+
+                for p in range(0, real_pop_size):
+                    # simulation returns exception or func value -- check the time of evaluating
+                    value, eval_time = self._simulate(pop[p])
+                    scores[p] = value
+                    time_counter += eval_time
+
+                if enable_printing:
+                    print(
+                        f"\nSim: Average time of function evaluating (secs): {time_counter/real_pop_size} (total = {time_counter})\n"
+                    )
+            else:
+
+                eval_time = time.time()
+                scores = self.set_function(pop)
+                eval_time = time.time() - eval_time
+                if enable_printing:
+                    print(
+                        f"\nSet: Average time of function evaluating (secs): {eval_time/real_pop_size} (total = {eval_time})\n"
+                    )
                 
         else:
 
@@ -1097,7 +1126,12 @@ class geneticalgorithm2:
         """
         like function_for_set but uses joblib with n_jobs (-1 goes to count of available processors)
         """
-        from joblib import Parallel, delayed
+        try:
+            from joblib import Parallel, delayed
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError(
+                f"this additional feature requires joblib package, run `python -m pip install joblib` or use another set function"
+            )
 
         def func(matrix: array2D):
             result = Parallel(n_jobs=n_jobs)(delayed(function_for_set)(matrix[i]) for i in range(matrix.shape[0]))

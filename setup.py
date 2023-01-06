@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="geneticalgorithm2", 
-    version="6.8.4",
+    version="6.8.5",
     author="Demetry Pascal",
     author_email="qtckpuhdsa@gmail.com",
     maintainer='Demetry Pascal',
@@ -24,12 +24,11 @@ setuptools.setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     install_requires=[
-        'func-timeout',
         'numpy',
         'matplotlib',
         'typing_extensions',
-        'OppOpPopInit>=2.0.0'
-        ]
+        'OppOpPopInit>=2.0.1'
+    ]
     
     )
 
