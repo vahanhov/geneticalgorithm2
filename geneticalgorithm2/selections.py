@@ -152,6 +152,10 @@ class Selection:
 
     @staticmethod
     def tournament(tau: int = 2) -> SelectionFunc:
+
+        # NOTE
+        # this code really does tournament selection
+        # because scores are always sorted
         
         def func(scores: array1D, parents_count: int):
             
