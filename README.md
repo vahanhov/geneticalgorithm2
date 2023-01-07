@@ -112,18 +112,18 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 
 Features of this package:
 
-* written on pure python
-* fast
-* no hard dependences (only numpy primary)
-* easy to use, easy to run
-* easy to logging
-* many plotting functions
-* many cases of crossover, mutation and selection
+* written on **pure python**
+* **extremely fast**
+* **no hard dependences** (only numpy primary, can work without matplotlib)
+* **easy to run**: no need to perform long task-setup process
+* easy to logging, reach **support of flexible callbacks**
+* **many built-in plotting functions**
+* **many built-in cases of crossover, mutation and selection**
 * support of integer, boolean and real (continuous/discrete) variables types
 * support of mixed types of variables
-* support of classic, elitist and studEA genetic algorithm combinations
-* support of revolutions and duplicates utilization  
-* reach support of customization
+* **support of classic, elitist and studEA genetic algorithm combinations**
+* **support of revolutions and duplicates utilization**
+* **reach support of customization**
     
 # Installation
 
