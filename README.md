@@ -144,6 +144,7 @@ pip3 install geneticalgorithm2
 - duplicates removing and revolutions will be moved to `MiddleCallbacks` and removed as alone `run()` parameters
 - `function_timeout` and `function` will be moved to `run()` method
 - new stop criteria callbacks (min std, max functions evaluations)
+- `vartype` will support strings like `iiiiibbf`
 
 ## 6.8.5 minor update
 
