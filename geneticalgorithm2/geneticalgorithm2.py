@@ -135,7 +135,6 @@ class geneticalgorithm2:
   
         """
 
-
         # all default fields
 
         self.param: AlgorithmParams = None
@@ -158,31 +157,30 @@ class geneticalgorithm2:
         self.population_size: int = None
         self.progress_stream = None
 
-
         # input algorithm's parameters
 
-        assert type(algorithm_parameters) in (dict, AlgorithmParams), "algorithm_parameters must be dict or AlgorithmParams object"
-        if type(algorithm_parameters) != AlgorithmParams:
+        assert isinstance(algorithm_parameters, (dict, AlgorithmParams)), (
+            "algorithm_parameters must be dict or AlgorithmParams object"
+        )
+        if not isinstance(algorithm_parameters, AlgorithmParams):
             algorithm_parameters = AlgorithmParams.from_dict(algorithm_parameters)
 
         algorithm_parameters.check_if_valid()
         self.param = algorithm_parameters
         self.crossover, self.real_mutation, self.discrete_mutation, self.selection = algorithm_parameters.get_CMS_funcs()
 
-
         # dimension and area bounds
         self.dim = int(dimension)
         assert self.dim > 0, f"dimension count must be int and >0, gotten {dimension}"
 
-
         if variable_type_mixed is not None:
             warnings.warn(
-                f"argument variable_type_mixed is deprecated and will be removed at version 7\n use variable_type={tuple(variable_type_mixed)} instead"
+                f"argument variable_type_mixed is deprecated and will be removed at version 7\n "
+                f"use variable_type={tuple(variable_type_mixed)} instead"
             )
             variable_type = variable_type_mixed
         self._set_types_indexes(variable_type)  # types indexes
         self._set_var_boundaries(variable_type, variable_boundaries)  # input variables' boundaries
-
 
         # fix mutation probs
 
@@ -193,7 +191,8 @@ class geneticalgorithm2:
 
         if self.param.crossover_probability is not None:
             warnings.warn(
-                f"crossover_probability is deprecated and will be removed in version 7. Reason: it's old and has no sense"
+                f"crossover_probability is deprecated and will be removed in version 7. "
+                f"Reason: it's old and has no sense"
             )
 
         #############################################################
@@ -218,7 +217,9 @@ class geneticalgorithm2:
         self.population_size = int(self.param.population_size)
         self._set_parents_count(self.param.parents_portion)
         self._set_elit_count(self.population_size, self.param.elit_ratio)
-        assert(self.parents_count >= self.elit_count), f"\n number of parents ({self.parents_count}) must be greater than number of elits ({self.elit_count})"
+        assert self.parents_count >= self.elit_count, (
+            f"\n number of parents ({self.parents_count}) must be greater than number of elits ({self.elit_count})"
+        )
 
         self._set_max_iterations()
 
@@ -226,7 +227,10 @@ class geneticalgorithm2:
 
         # specify this function to speed up or change default behaviour
         self.fill_children: Optional[Callable[[array2D, int], None]] = None
-        """custom function which adds children for population POP where POP[:parents_count] are parents lines and next lines are for children"""
+        """
+        custom function which adds children for population POP 
+            where POP[:parents_count] are parents lines and next lines are for children
+        """
 
     def _set_types_indexes(self, variable_type: Union[str, Sequence[str]]):
 
@@ -235,9 +239,11 @@ class geneticalgorithm2:
         self.indexes_float = np.array([])
 
         VALID_STRINGS = ('bool', 'int', 'real')
-        assert_message = f"\n variable_type must be 'bool', 'int', 'real' or a sequence with 'int' and 'real', got {variable_type}"
+        assert_message = (
+            f"\n variable_type must be 'bool', 'int', 'real' or a sequence with 'int' and 'real', got {variable_type}"
+        )
 
-        if type(variable_type) == str:
+        if isinstance(variable_type, str):
             assert (variable_type in VALID_STRINGS), assert_message
             if variable_type == 'real':
                 self.indexes_float = indexes
@@ -246,8 +252,14 @@ class geneticalgorithm2:
 
         else:  # sequence case
 
-            assert (len(variable_type) == self.dim), f"\n variable_type must have a length equal dimension. Should be {self.dim}, got {len(variable_type)}"
-            assert 'bool' not in variable_type, "don't use 'bool' if variable_type is a sequence, for 'boolean' case use 'int' and specify boundary as (0,1)"
+            assert len(variable_type) == self.dim, (
+                f"\n variable_type must have a length equal dimension. "
+                f"Should be {self.dim}, got {len(variable_type)}"
+            )
+            assert 'bool' not in variable_type, (
+                "don't use 'bool' if variable_type is a sequence, "
+                "for 'boolean' case use 'int' and specify boundary as (0,1)"
+            )
             assert all(v in VALID_STRINGS for v in variable_type), assert_message
 
             vartypes = np.array(variable_type)
@@ -264,19 +276,26 @@ class geneticalgorithm2:
         else:
 
             if is_numpy(variable_boundaries):
-                assert variable_boundaries.shape == (self.dim, 2), f"\n if variable_boundaries is numpy array, it must be with shape (dim, 2)"
+                assert variable_boundaries.shape == (self.dim, 2), (
+                    f"\n if variable_boundaries is numpy array, it must be with shape (dim, 2)"
+                )
             else:
-                assert len(variable_boundaries) == self.dim and all((len(t) == 2 for t in variable_boundaries)), "\n if variable_boundaries is sequence, it must be with len dim and boundary for each variable must be a tuple of length two"
+                assert len(variable_boundaries) == self.dim and all((len(t) == 2 for t in variable_boundaries)), (
+                    "\n if variable_boundaries is sequence, "
+                    "it must be with len dim and boundary for each variable must be a tuple of length two"
+                )
 
             for i in variable_boundaries:
-                assert(i[0] <= i[1]), "\n lower_boundaries must be smaller than upper_boundaries [lower,upper]"
+                assert i[0] <= i[1], "\n lower_boundaries must be smaller than upper_boundaries [lower,upper]"
 
             self.var_bounds = [(i[0], i[1]) for i in variable_boundaries]
 
     def _set_parents_count(self, parents_portion: float):
 
         self.parents_count = int(parents_portion * self.population_size)
-        assert self.parents_count <= self.population_size and self.parents_count > 1, f'parents count {self.parents_count} cannot be less than population size {self.population_size}'
+        assert self.population_size >= self.parents_count > 1, (
+            f'parents count {self.parents_count} cannot be less than population size {self.population_size}'
+        )
         trl = self.population_size - self.parents_count
         if trl % 2 != 0:
             self.parents_count += 1
@@ -284,7 +303,7 @@ class geneticalgorithm2:
     def _set_elit_count(self, pop_size: int, elit_ratio: Union[float, int]):
 
         assert elit_ratio >= 0
-        self.elit_count = elit_ratio if type(elit_ratio) == int else math.ceil(pop_size*elit_ratio)
+        self.elit_count = elit_ratio if isinstance(elit_ratio, str) else math.ceil(pop_size*elit_ratio)
 
     def _set_max_iterations(self):
 
@@ -385,7 +404,9 @@ class geneticalgorithm2:
             print("given function is not applicable")
         eval_time = time.time() - eval_time
 
-        assert obj is not None, f"the given function was running like {eval_time} seconds and does not provide any output"
+        assert obj is not None, (
+            f"the given function was running like {eval_time} seconds and does not provide any output"
+        )
 
         tp = type(obj)
         assert (
@@ -433,11 +454,13 @@ class geneticalgorithm2:
         revolution_after_stagnation_step: Optional[int] = None,
         revolution_part: float = 0.3,
 
-        population_initializer: Tuple[int, Callable[[array2D, array1D], Tuple[array2D, array1D]]] = Population_initializer(select_best_of=1, local_optimization_step='never', local_optimizer=None),
+        population_initializer: Tuple[
+            int, Callable[[array2D, array1D], Tuple[array2D, array1D]]
+        ] = Population_initializer(select_best_of=1, local_optimization_step='never', local_optimizer=None),
 
         stop_when_reached: Optional[float] = None,
         callbacks: Optional[Sequence[CallbackFunc]] = None,
-        middle_callbacks: Optional[Sequence[MiddleCallbackFunc]] = None, #+
+        middle_callbacks: Optional[Sequence[MiddleCallbackFunc]] = None,  #+
         time_limit_secs: Optional[float] = None,
         save_last_generation_as: Optional[str] = None,
         seed: Optional[int] = None
@@ -454,43 +477,53 @@ class geneticalgorithm2:
 
             disable_progress_bar:
 
-            set_function : 2D-array -> 1D-array function, which applyes to matrix of population (size (samples, dimention))
-            to estimate their values
+            set_function : 2D-array -> 1D-array function,
+                which applyes to matrix of population (size (samples, dimention))
+                    to estimate their values
 
             apply_function_to_parents: apply function to parents from previous generation (if it's needed)
 
-            start_generation: Generation object or a dictionary with structure {'variables':2D-array of samples, 'scores': function values on samples} or path to .npz file (str) with saved generation; if 'scores' value is None the scores will be compute
+            start_generation: Generation object or a dictionary with structure
+                {'variables':2D-array of samples, 'scores': function values on samples}
+                or path to .npz file (str) with saved generation; if 'scores' value is None the scores will be compute
 
             studEA: using stud EA strategy (crossover with best object always)
 
             mutation_indexes: indexes of dimensions where mutation can be performed (all dimensions by default)
 
-            init_creator: the function creates population samples. By default -- random uniform for real variables and random uniform for int
+            init_creator: the function creates population samples.
+                By default -- random uniform for real variables and random uniform for int
             init_oppositors: the list of oppositors creates oppositions for base population. No by default
-            duplicates_oppositor: oppositor for applying after duplicates removing. By default -- using just random initializer from creator
-            remove_duplicates_generation_step: None/int, step for removing duplicates (have a sense with discrete tasks). No by default
+            duplicates_oppositor: oppositor for applying after duplicates removing.
+                By default -- using just random initializer from creator
+            remove_duplicates_generation_step: step for removing duplicates (have a sense with discrete tasks).
+                No by default
             revolution_oppositor: oppositor for revolution time. No by default
             revolution_after_stagnation_step: create revolution after this generations of stagnation. No by default
             revolution_part: float, the part of generation to being oppose. By default is 0.3
 
-            population_initializer: object for actions at population initialization step to create better start population. See doc
+            population_initializer: object for actions at population initialization step
+                to create better start population. See doc
 
             stop_when_reached: stop searching after reaching this value (it can be potential minimum or something else)
 
-            callbacks: sequence of callback functions with structure: (generation_number, report_list, last_population, last_scores) -> do some action
+            callbacks: sequence of callback functions with structure:
+                (generation_number, report_list, last_population, last_scores) -> do some action
 
             middle_callbacks: sequence of functions made MiddleCallbacks class
 
             time_limit_secs: limit time of working (in seconds)
 
-            save_last_generation_as: path to .npz file for saving last_generation as numpy dictionary like {'population': 2D-array, 'scores': 1D-array}, None if doesn't need to save in file
+            save_last_generation_as: path to .npz file for saving last_generation as numpy dictionary like
+                {'population': 2D-array, 'scores': 1D-array}, None if doesn't need to save in file
 
             seed: random seed (None if doesn't matter)
         """
 
         if disable_progress_bar:
             warnings.warn(
-                f"disable_progress_bar is deprecated and will be removed in version 7, use probress_bar_stream=None to disable progress bar"
+                f"disable_progress_bar is deprecated and will be removed in version 7, "
+                f"use probress_bar_stream=None to disable progress bar"
             )
             progress_bar_stream = None
 
@@ -501,10 +534,14 @@ class geneticalgorithm2:
         assert is_current_gen_number(revolution_after_stagnation_step), "must be None or int and >0"
         assert is_current_gen_number(remove_duplicates_generation_step), "must be None or int and >0"
         assert can_be_prob(revolution_part), f"revolution_part must be in [0,1], not {revolution_part}"
-        assert (stop_when_reached is None or type(stop_when_reached) in (int, float))
-        assert (isinstance(callbacks, collections.abc.Sequence) or callbacks is None), "callbacks should be list of callbacks functions"
-        assert (isinstance(middle_callbacks, collections.abc.Sequence) or middle_callbacks is None), "middle_callbacks should be list of MiddleCallbacks functions"
-        assert (time_limit_secs is None or time_limit_secs > 0), 'time_limit_secs must be None of number > 0'
+        assert stop_when_reached is None or isinstance(stop_when_reached, (int, float))
+        assert isinstance(callbacks, collections.abc.Sequence) or callbacks is None, (
+            "callbacks should be a list of callbacks functions"
+        )
+        assert isinstance(middle_callbacks, collections.abc.Sequence) or middle_callbacks is None, (
+            "middle_callbacks should be list of MiddleCallbacks functions"
+        )
+        assert time_limit_secs is None or time_limit_secs > 0, 'time_limit_secs must be None of number > 0'
 
         self._set_mutation_indexes(mutation_indexes)
         from OppOpPopInit import set_seed
@@ -530,7 +567,11 @@ class geneticalgorithm2:
         else:
             show_progress = None
 
-        stop_by_val = (lambda best_f: False) if stop_when_reached is None else (lambda best_f: best_f <= stop_when_reached)
+        stop_by_val = (
+            (lambda best_f: False)
+            if stop_when_reached is None
+            else (lambda best_f: best_f <= stop_when_reached)
+        )
 
         t: int = 0
         count_stagnation: int = 0
@@ -629,7 +670,11 @@ class geneticalgorithm2:
         ############################################################
 
         start_time = time.time()
-        time_is_done = (lambda: False) if time_limit_secs is None else (lambda: int(time.time() - start_time) >= time_limit_secs)
+        time_is_done = (
+            (lambda: False)
+            if time_limit_secs is None
+            else (lambda: int(time.time() - start_time) >= time_limit_secs)
+        )
 
         ############################################################# 
         # Initial Population
@@ -724,7 +769,9 @@ class geneticalgorithm2:
                         return pop, scores
 
                     if count_to_create > sc.size:
-                        raise Exception(f"Too many duplicates at generation {gen} ({count_to_create} > {sc.size}), cannot oppose")
+                        raise Exception(
+                            f"Too many duplicates at generation {gen} ({count_to_create} > {sc.size}), cannot oppose"
+                        )
 
                     # oppose count_to_create worse elements
                     pp2 = OppositionOperators.Reflect(pp[-count_to_create:], self.dup_oppositor)  # new pop elements
@@ -750,7 +797,8 @@ class geneticalgorithm2:
         else:
             if revolution_oppositor is None:
                 raise Exception(
-                    f"How can I make revolution each {revolution_after_stagnation_step} stagnation steps if revolution_oppositor is None (not defined)?"
+                    f"How can I make revolution each {revolution_after_stagnation_step} stagnation steps "
+                    f"if revolution_oppositor is None (not defined)?"
                 )
             assert callable(revolution_oppositor)
 
@@ -817,7 +865,8 @@ class geneticalgorithm2:
 
                 if enable_printing:
                     print(
-                        f"\nSim: Average time of function evaluating (secs): {time_counter/real_pop_size} (total = {time_counter})\n"
+                        f"\nSim: Average time of function evaluating (secs): "
+                        f"{time_counter/real_pop_size} (total = {time_counter})\n"
                     )
             else:
 
@@ -826,7 +875,8 @@ class geneticalgorithm2:
                 eval_time = time.time() - eval_time
                 if enable_printing:
                     print(
-                        f"\nSet: Average time of function evaluating (secs): {eval_time/real_pop_size} (total = {eval_time})\n"
+                        f"\nSet: Average time of function evaluating (secs): "
+                        f"{eval_time/real_pop_size} (total = {eval_time})\n"
                     )
                 
         else:
@@ -845,13 +895,13 @@ class geneticalgorithm2:
 
                 if enable_printing:
                     print(
-                        f'\nFirst scores are made from gotten variables (by {_time} secs, about {_time/scores.size} for each creature)\n'
+                        f'\nFirst scores are made from gotten variables '
+                        f'(by {_time} secs, about {_time/scores.size} for each creature)\n'
                     )
             else:
                 scores = start_generation.scores
                 if enable_printing:
                     print(f"\nFirst scores are from gotten population\n")
-
 
         # Initialization by select bests and local_descent
         
@@ -925,7 +975,12 @@ class geneticalgorithm2:
             par[elit_slice] = pop[elit_slice].copy()
             par_scores[elit_slice] = scores[elit_slice].copy()
 
-            new_par_inds = self.selection(scores[self.elit_count:], self.parents_count - self.elit_count).astype(np.int16) + self.elit_count
+            new_par_inds = (
+                self.selection(
+                    scores[self.elit_count:],
+                    self.parents_count - self.elit_count
+                ).astype(np.int16) + self.elit_count
+            )
             """non-elit parents indexes"""
             #new_par_inds = self.selection(scores, self.parents_count - self.elit_count).astype(np.int16)
             par_slice = slice(self.elit_count, self.parents_count)
@@ -1047,7 +1102,9 @@ class geneticalgorithm2:
         """
 
         if not hasattr(self, 'result'):
-            raise Exception("There is no 'result' field into ga object! Before plotting generation u need to run seaching process")
+            raise Exception(
+                "There is no 'result' field into ga object! Before plotting generation u need to run seaching process"
+            )
 
         plot_pop_scores(self.result.last_generation.scores, title, save_as)
 
@@ -1095,15 +1152,13 @@ class geneticalgorithm2:
 
     #endregion
 
-
     #region Set functions
-
 
     @staticmethod
     def default_set_function(function_for_set: Callable[[array1D], float]):
         """
         simple function for creating set_function 
-        function_for_set just applyes to each row of population
+        function_for_set just applies to each row of population
         """
         def func(matrix: array2D):
             return np.array(
@@ -1130,7 +1185,9 @@ class geneticalgorithm2:
             from joblib import Parallel, delayed
         except ModuleNotFoundError:
             raise ModuleNotFoundError(
-                f"this additional feature requires joblib package, run `python -m pip install joblib` or use another set function"
+                "this additional feature requires joblib package," 
+                "run `pip install joblib` or `pip install --upgrade geneticalgorithm2[full]`" 
+                "or use another set function"
             )
 
         def func(matrix: array2D):

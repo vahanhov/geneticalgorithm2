@@ -13,6 +13,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
 - [Installation](#installation)
 - [Updates information](#updates-information)
   - [**Future**](#future)
+  - [6.8.6 minor update](#686-minor-update)
   - [6.8.5 minor update](#685-minor-update)
   - [6.8.4 minor update](#684-minor-update)
   - [6.8.3 types update](#683-types-update)
@@ -47,7 +48,7 @@ version](https://badge.fury.io/py/geneticalgorithm2.svg)](https://pypi.org/proje
       - [**Mutation**](#mutation)
       - [**Selection**](#selection)
   - [Methods and Properties of model:](#methods-and-properties-of-model)
-- [Examples for begginer](#examples-for-begginer)
+- [Examples for beginner](#examples-for-beginner)
   - [A minimal example](#a-minimal-example)
   - [The simple example with integer variables](#the-simple-example-with-integer-variables)
   - [The simple example with Boolean variables](#the-simple-example-with-boolean-variables)
@@ -114,7 +115,7 @@ Features of this package:
 
 * written on **pure python**
 * **extremely fast**
-* **no hard dependences** (only numpy primary, can work without matplotlib)
+* **no hard dependencies** (only numpy primary, can work without matplotlib)
 * **easy to run**: no need to perform long task-setup process
 * easy to logging, reach **support of flexible callbacks**
 * **many built-in plotting functions**
@@ -127,14 +128,15 @@ Features of this package:
     
 # Installation
 
+Install this package with standard dependencies to use the entire functional.
 ```
 pip install geneticalgorithm2
 ```
 
-or 
+Install this package with full dependencies to use all provided functional.
 
 ```
-pip3 install geneticalgorithm2
+pip install geneticalgorithm2[full]
 ```
 
 # Updates information
@@ -146,17 +148,22 @@ pip3 install geneticalgorithm2
 - new stop criteria callbacks (min std, max functions evaluations)
 - `vartype` will support strings like `iiiiibbf`
 
+## 6.8.6 minor update
+
+- small package installation update: add `pip install geneticalgorithm2[full]` version
+- small refactor
+
 ## 6.8.5 minor update
 
 - update `OppOpPopInit` `2.0.0->2.0.1`
 - set default `function_timeout` to `None` which means no use of function time checking
-- remove `joblib` and `func_timeout` from necessary dependences
+- remove `joblib` and `func_timeout` from necessary dependencies
 
 ## 6.8.4 minor update
 
 - a bit of refactor
 - little optimizations
-- add empty field `fill_children(pop_matrix, parents_count)` to `geneticalgorithm2` class to specify children creating behaviour (what is the most intensive part of algorithm after optimizing func calculations), see [this](#specify-fill_children-method)
+- add empty field `fill_children(pop_matrix, parents_count)` to `geneticalgorithm2` class to specify children creating behavior (what is the most intensive part of algorithm after optimizing func calculations), see [this](#specify-fill_children-method)
 
 ## 6.8.3 types update
 
@@ -185,11 +192,11 @@ pip3 install geneticalgorithm2
 
 - fix some bug of `variable_type=='bool'`
 - some refactor of progress bar
-- add some dependences to `setup.py`
+- add some dependencies to `setup.py`
 
 ## 6.7.5 refactor
 
-- shorter progress bar (length can be controled by setting `PROGRESS_BAR_LEN` field of `geneticalgorithm2` class)
+- shorter progress bar (length can be controlled by setting `PROGRESS_BAR_LEN` field of `geneticalgorithm2` class)
 - shorter logic of `run()`, more informative output 
 
 ## 6.7.4 bug fix
@@ -220,7 +227,7 @@ pip3 install geneticalgorithm2
 
 ## 6.6.1 patch
 
-- removed unnecessary dependences
+- removed unnecessary dependencies
 
 ## 6.6.0 minor update (refactoring)
 
@@ -271,7 +278,7 @@ All that classes are collected [in file](geneticalgorithm2/classes.py). To maint
 ## Main algorithm structure
 
 ```
-Preprocess: making inner functions depends on params, making/loading start population
+Pre-process: making inner functions depends on params, making/loading start population
 
 while True:
 
@@ -284,7 +291,7 @@ while True:
         select (parents count - elit count) random samples (by selection function)
 
     create (total samples count - parents count) children (samples from selected parents) and put them to new population:
-        while not all chilren are created:
+        while not all children are created:
             select 2 random parents
             make child1, child2 from them using crossover
             mutate child1 by mutation (model.mut)
@@ -294,7 +301,7 @@ while True:
     remove duplicates, make revolutions, sort population by scores
     use callbacks, use middle callbacks
 
-Postprocess: plotting results, saving
+Post-process: plotting results, saving
 
 ```
 
@@ -338,7 +345,7 @@ f_tmp = lambda arr: -target(arr)
 # ... find global min
 #
 
-tagret_result = -global_min
+target_result = -global_min
 ```
 
 Okay, also u should **create the bounds for each variable** (if exist) like here:
@@ -469,7 +476,7 @@ output before function_timeout (unit is seconds) the algorithm raise error.
 For example, when there is an infinite loop in the given function. `None` means disabling
         
 * **algorithm_parameters** (`Union[AlgorithmParams, Dict[str, Any]]`). Dictionary or AlgorithmParams object with fields:  
-    * @ **max_num_iteration** (`int/None`) - stoping criteria of the genetic algorithm (GA)  
+    * @ **max_num_iteration** (`int/None`) - stopping criteria of the genetic algorithm (GA)  
     * @ **population_size** (`int > 0`)   
     * @ **mutation_probability** (`float in [0,1]`)
     * @ **mutation_discrete_probability** (`float in [0,1]` or `None`)
@@ -626,9 +633,9 @@ If this parameter's value is `None` the algorithm sets maximum number of iterati
 
 #### **Mutation**
 
-* **mutation_probability**: determines the chance of each gene in each individual solution to be replaced by a random value. Works for continious variables or for all variables if **mutation_discrete_probability** is `None`
+* **mutation_probability**: determines the chance of each gene in each individual solution to be replaced by a random value. Works for continuous variables or for all variables if **mutation_discrete_probability** is `None`
 
-* **mutation_discrete_probability**: works like **mutation_probability** but for discrete variables. If `None`, will be changed to **mutation_probability** value; so just don't specify this parameter if u don't need special mutation behaviour for discrete variables
+* **mutation_discrete_probability**: works like **mutation_probability** but for discrete variables. If `None`, will be changed to **mutation_probability** value; so just don't specify this parameter if u don't need special mutation behavior for discrete variables
 
 * **mutation_type**: there are several options (only for real variables) including `'uniform_by_x'`, `'uniform_by_center'`, `'gauss_by_x'`, `'gauss_by_center'`; default is `'uniform_by_center'`. U also can use mutation as functions from `Mutations` class:
     * `Mutations.gauss_by_center(sd = 0.2)`
@@ -750,7 +757,7 @@ It would be more logical to use params like `studEA` as an algorithm param, but 
 
 
 
-# Examples for begginer
+# Examples for beginner
 
 ## A minimal example 
 Assume we want to find a set of `X = (x1,x2,x3)` that minimizes function `f(X) = x1 + x2 + x3` where `X` can be any real number in `[0, 10]`.
@@ -938,13 +945,13 @@ def my_crossover(parent_a, parent_b):
     child_inds = np.array(list(a_only) + list(b_only), dtype = np.int8)
     np.random.shuffle(child_inds) # mix
     
-    childs = np.zeros((2, parent_a.size))
+    children = np.zeros((2, parent_a.size))
     if intersect:
-        childs[:, np.array(list(intersect))] = 1
-    childs[0, child_inds[:int(child_inds.size/2)]] = 1
-    childs[1, child_inds[int(child_inds.size/2):]] = 1
+        children[:, np.array(list(intersect))] = 1
+    children[0, child_inds[:int(child_inds.size/2)]] = 1
+    children[1, child_inds[int(child_inds.size/2):]] = 1
     
-    return childs[0,:], childs[1,:]
+    return children[0,:], children[1,:]
     
 
 model = ga(function=f, 
@@ -1030,7 +1037,7 @@ make sure to increase function_timeout in arguments.
 
 ## Standard GA vs. Elitist GA
 
-The convergence curve of an elitist genetic algorithm is always non-increasing. So, the best ever found solution is equal to the best solution of the last iteration. However, the convergence curve of a standard genetic algorithm is different. If `elit_ratio` is zero geneticalgroithm2 implements a standard GA. The output of geneticalgorithm2 for standard GA is the best ever found solution not the solution of the last iteration. The difference between the convergence curve of standard GA and elitist GA is shown below:
+The convergence curve of an elitist genetic algorithm is always non-increasing. So, the best ever found solution is equal to the best solution of the last iteration. However, the convergence curve of a standard genetic algorithm is different. If `elit_ratio` is zero geneticalgorithm2 implements a standard GA. The output of geneticalgorithm2 for standard GA is the best ever found solution not the solution of the last iteration. The difference between the convergence curve of standard GA and elitist GA is shown below:
 
 ![](tests/output/standard_vs_elitist.png)
 
@@ -1284,7 +1291,7 @@ See [code example](tests/small_middle_callbacks.py)
 
 ## How to compare efficiency of several versions of GA optimization
 
-To compare efficiency of several versions of GA optimization (such as several values of several hyperparamenters or including/excepting some actions like oppositions) u should make some count of simulations and compare results using some statistical test. I have realized this logic [here](https://github.com/PasaOpasen/ab-testing-results-difference) 
+To compare efficiency of several versions of GA optimization (such as several values of several hyperparameters or including/excepting some actions like oppositions) u should make some count of simulations and compare results using some statistical test. I have realized this logic [here](https://github.com/PasaOpasen/ab-testing-results-difference) 
 
 ## Hints on how to adjust genetic algorithm's parameters (from `geneticalgorithm` package)
 
@@ -1642,7 +1649,7 @@ start_pop = np.random.uniform(0, 10, (50, dim))
 start_scores = np.array([f(start_pop[i]) for i in range(start_pop.shape[0])])
 
 # plot start scores using plot_pop_scores function
-plot_pop_scores(start_scores, title = 'Population scores before beggining of searching', save_as= 'plot_scores_start.png')
+plot_pop_scores(start_scores, title = 'Population scores before beginning of searching', save_as= 'plot_scores_start.png')
 
 
 model = ga(function=f, dimension=dim, variable_type='real', variable_boundaries=varbound)
@@ -1779,7 +1786,7 @@ samples = np.random.uniform(0, 50, (300, dim)) # 300 is the new size of your gen
 
 model.run(no_plot = False, start_generation={'variables':samples, 'scores': None}) 
 # it's not necessary to evaluate scores before
-# but u can do it if u have evaluated scores and don't wanna repeat calcucations
+# but u can do it if u have evaluated scores and don't wanna repeat calculations
 
 
 

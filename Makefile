@@ -1,4 +1,7 @@
 
+tag:
+	git tag $(shell cat version.txt)
+	git push --tags
 
 pypipush:
 	python setup.py develop
