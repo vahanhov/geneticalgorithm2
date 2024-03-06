@@ -432,7 +432,7 @@ class geneticalgorithm2:
     def run(
         self,
         no_plot: bool = False,
-        plot_path: Optional[str] = None,
+        plot_file: Optional[str] = None,
         disable_printing: bool = False,
         progress_bar_stream: Optional[str] = 'stdout',
 
@@ -1058,7 +1058,7 @@ class geneticalgorithm2:
             sys.stdout.flush()
 
         if not no_plot:
-            self.plot_results(save_as=plot_path)
+            self.plot_results(save_as=plot_file)
 
         if enable_printing:
             if reason_to_stop is not None and 'iterations' not in reason_to_stop:
